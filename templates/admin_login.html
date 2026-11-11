@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Login | MOSES K SOFTWARE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+    font-family: Arial;
+    background: #101b3c;
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+.card {
+    background: white;
+    padding: 35px;
+    border-radius: 15px;
+    width: min(350px, 80%);
+}
+h2 { color: #172653; text-align: center; }
+input {
+    width: 100%;
+    padding: 13px;
+    margin: 10px 0;
+    box-sizing: border-box;
+}
+button {
+    width: 100%;
+    padding: 14px;
+    background: #172653;
+    color: white;
+    border: 0;
+    cursor: pointer;
+}
+.error { color: red; }
+</style>
+</head>
+
+<body>
+<div class="card">
+    <h2>MOSES K SOFTWARE</h2>
+    <p style="text-align:center">Administrator Login</p>
+
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+        <p class="{{ category }}">{{ message }}</p>
+    {% endfor %}
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token"
+               value="{{ csrf_token() }}">
+
+        <input type="text" name="username"
+               placeholder="Administrator Username" required>
+
+        <input type="password" name="password"
+               placeholder="Administrator Password" required>
+
+        <button type="submit">LOGIN</button>
+    </form>
+</div>
+</body>
+</html>

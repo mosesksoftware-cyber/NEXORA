@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Order Confirmation | NEXORA</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f2f5fb;
+    text-align: center;
+    padding: 30px 15px;
+    color: #17213b;
+    margin: 0;
+}
+
+.card {
+    background: white;
+    max-width: 450px;
+    margin: 40px auto;
+    padding: 30px 22px;
+    border-radius: 18px;
+    box-shadow: 0 4px 20px #0001;
+}
+
+.logo {
+    color: #091936;
+    font-size: 27px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.success-icon {
+    font-size: 55px;
+    margin: 15px 0;
+}
+
+h2 {
+    color: #159447;
+}
+
+.number {
+    font-size: 25px;
+    color: #e83e83;
+    font-weight: bold;
+    margin: 12px 0 20px;
+    overflow-wrap: anywhere;
+}
+
+.details {
+    background: #f5f7fc;
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 20px;
+    text-align: left;
+}
+
+.details p {
+    margin: 12px 0;
+    overflow-wrap: anywhere;
+}
+
+.notice {
+    background: #fff5d9;
+    color: #795600;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+a {
+    display: inline-block;
+    margin-top: 20px;
+    background: #091936;
+    color: white;
+    padding: 14px 25px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <div class="logo">NEXORA</div>
+
+    <div class="success-icon">✅</div>
+
+    <h2>Order Received!</h2>
+
+    <p>Your order has been successfully recorded.</p>
+
+    <p><strong>Order Number</strong></p>
+
+    <div class="number">
+        #MKS{{ "%05d"|format(order.id) }}
+    </div>
+
+    <hr>
+
+    <div class="details">
+        <p><strong>Customer:</strong> {{ order.customer_name }}</p>
+        <p><strong>Phone:</strong> {{ order.phone }}</p>
+        <p><strong>Network:</strong> {{ order.network }}</p>
+        <p><strong>Package:</strong> {{ order.package }}</p>
+        <p><strong>Amount:</strong> UGX {{ "{:,}".format(order.amount) }}</p>
+    </div>
+
+    <div class="notice">
+        Payment verification is still required.
+        Please wait for confirmation before assuming your order is complete.
+    </div>
+
+    <a href="/">Back to Home</a>
+
+</div>
+
+</body>
+</html>
