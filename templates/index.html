@@ -5,8 +5,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NEXORA | Digital Services Uganda</title>
+
 <meta name="google-site-verification" content="QVdcEOIgtBCK0zo8enyzULkK8lYvAktt3-m05XwHJMk">
 <meta name="description" content="NEXORA - Your Digital Connection. Order affordable MTN, Airtel and Lyca data bundles in Uganda.">
+
+<!-- NEXORA PWA / ANDROID APP CONFIGURATION -->
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
+<meta name="theme-color" content="#091936">
+<meta name="application-name" content="NEXORA">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NEXORA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="icon" type="image/png" sizes="192x192"
+href="{{ url_for('static', filename='icons/icon-192.png') }}">
+
+<link rel="apple-touch-icon"
+href="{{ url_for('static', filename='icons/icon-192.png') }}">
 
 <style>
 :root {
@@ -410,7 +427,6 @@ let selectedPackage = "";
 let selectedPrice = 0;
 let currentOrder = null;
 
-/* AUTOMATIC TRACKING STATE */
 let trackingTimer = null;
 let activeTracking = null;
 
