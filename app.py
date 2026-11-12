@@ -931,6 +931,29 @@ def track_order():
                 color: #a00000;
             }
 
+            .service-announcement {
+                background: #fff0f6;
+                border: 1px solid #f3b6d0;
+                border-left: 5px solid #e83e83;
+                color: #17213b;
+                padding: 15px;
+                border-radius: 10px;
+                margin: 18px 0;
+                text-align: left;
+                line-height: 1.6;
+                font-size: 14px;
+            }
+
+            .service-announcement h4 {
+                color: #d52d76;
+                margin: 0 0 9px;
+                font-size: 16px;
+            }
+
+            .service-announcement p {
+                margin: 8px 0;
+            }
+
             a {
                 display: block;
                 text-align: center;
@@ -949,6 +972,34 @@ def track_order():
             <h2>NEXORA</h2>
 
             <h3>Track Your Order</h3>
+
+            <div class="service-announcement">
+                <h4>📢 NEXORA Service Announcement</h4>
+
+                <p><strong>Dear Valued Customer,</strong></p>
+
+                <p>
+                    We sincerely apologize for the inconvenience caused
+                    while delivering your requested data packages.
+                </p>
+
+                <p>
+                    We are currently improving our services to provide
+                    a better and more reliable customer experience.
+                </p>
+
+                <p>
+                    We will notify you as soon as our services return
+                    to normal operation.
+                </p>
+
+                <p>
+                    Thank you for your patience, understanding and
+                    continued support.
+                </p>
+
+                <strong>NEXORA — Your Digital World, Simplified. 🚀</strong>
+            </div>
 
             <p>
                 Enter your tracking reference and the phone number
