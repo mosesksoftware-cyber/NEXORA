@@ -100,6 +100,7 @@ button,a {-webkit-tap-highlight-color:transparent}
 .duration-card.selected {border-color:var(--blue);background:#edf2ff}
 .package-card {position:relative;background:white;border:2px solid transparent;padding:17px;border-radius:17px;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy);text-align:left;min-height:105px}
 .package-card.selected {border-color:var(--blue);background:#edf2ff}
+.package-card:disabled {opacity:.45;cursor:not-allowed;background:#f1f3f6;border-color:#d7dce5}
 .package-card .gb {font-size:23px;font-weight:900}
 .package-card .price {margin-top:9px;color:var(--blue);font-weight:900}
 .package-card small {display:block;margin-top:7px;color:var(--muted);font-size:11px}
@@ -459,13 +460,13 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
 <script>
 const packages = {
     Weekly: [
-        {gb:"7 GB",price:4000},
-        {gb:"8.5 GB",price:5500},
-        {gb:"10 GB",price:7000},
-        {gb:"12.5 GB",price:9000}
+        {gb:"12 GB",price:9000},
+        {gb:"15 GB",price:11000},
+        {gb:"17.5 GB",price:13000},
+        {gb:"19 GB",price:15000}
     ],
     Monthly: [
-        {gb:"10 GB",price:7000},
+        {gb:"10 GB",price:7000,disabled:true},
         {gb:"15 GB",price:10000},
         {gb:"20 GB",price:15000},
         {gb:"25 GB",price:20000},
@@ -599,12 +600,13 @@ function displayPackages() {
         button.className = "package-card";
         button.dataset.package = item.gb;
         button.dataset.price = item.price;
+        button.disabled = Boolean(item.disabled);
 
         button.innerHTML = `
             <span class="check">✓</span>
             <div class="gb">${escapeHTML(item.gb)}</div>
             <div class="price">${money(item.price)}</div>
-            <small>${escapeHTML(selectedDuration)} bundle</small>
+            <small>${item.disabled ? "Currently unavailable" : escapeHTML(selectedDuration) + " bundle"}</small>
         `;
 
         button.addEventListener("click", () => selectPackage(button));
