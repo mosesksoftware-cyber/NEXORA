@@ -78,9 +78,12 @@ button,a {-webkit-tap-highlight-color:transparent}
 .package-heading p {margin:0;color:#dce5ff;font-size:12px}
 .duration-grid,.package-grid {display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .duration-card {border:2px solid transparent;background:white;color:var(--navy);border-radius:16px;padding:20px 10px;font-size:16px;font-weight:900;cursor:pointer}
+.duration-card:disabled {opacity:.55;cursor:not-allowed;background:#e9ecf2;color:#778198}
 .duration-card.selected {border-color:var(--blue);background:#edf2ff}
 .package-card {position:relative;background:white;border:2px solid transparent;padding:17px;border-radius:17px;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy);text-align:left;min-height:105px}
 .package-card.selected {border-color:var(--blue);background:#edf2ff}
+.package-card:disabled {opacity:.55;cursor:not-allowed;background:#e9ecf2;color:#778198;border-color:#d8dce5}
+.package-card:disabled .price {color:#778198}
 .package-card .gb {font-size:23px;font-weight:900}
 .package-card .price {margin-top:9px;color:var(--blue);font-weight:900}
 .package-card small {display:block;margin-top:7px;color:var(--muted);font-size:11px}
@@ -201,7 +204,7 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
             <p id="durationNetworkLabel">Select Weekly or Monthly.</p>
         </div>
         <div class="duration-grid">
-            <button type="button" class="duration-card" data-duration="Weekly">📅<br><br>WEEKLY</button>
+            <button type="button" class="duration-card" data-duration="Weekly" disabled aria-disabled="true" title="Weekly bundles are currently unavailable">📅<br><br>WEEKLY<br><small>Currently unavailable</small></button>
             <button type="button" class="duration-card" data-duration="Monthly">🗓️<br><br>MONTHLY</button>
         </div>
     </div>
@@ -547,11 +550,18 @@ function displayPackages() {
         button.dataset.package = item.gb;
         button.dataset.price = item.price;
 
+        const unavailable = selectedDuration === "Monthly" &&
+            item.gb === "10 GB" && item.price === 7000;
+        button.disabled = unavailable;
+        if (unavailable) {
+            button.title = "This monthly package is currently unavailable";
+        }
+
         button.innerHTML = `
             <span class="check">✓</span>
             <div class="gb">${escapeHTML(item.gb)}</div>
             <div class="price">${money(item.price)}</div>
-            <small>${escapeHTML(selectedDuration)} bundle</small>
+            <small>${unavailable ? "Currently unavailable" : escapeHTML(selectedDuration) + " bundle"}</small>
         `;
 
         button.addEventListener("click", () => selectPackage(button));
