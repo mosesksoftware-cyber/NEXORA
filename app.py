@@ -202,6 +202,21 @@ def init_db():
             ON orders(tracking_code)
         """)
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS airtime_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                reference TEXT NOT NULL UNIQUE,
+                network TEXT NOT NULL,
+                airtime_phone TEXT NOT NULL,
+                airtime_amount INTEGER NOT NULL,
+                payout_phone TEXT NOT NULL,
+                payout_amount INTEGER,
+                status TEXT NOT NULL DEFAULT 'Pending',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+
 
 # ==================================================
 # CSRF SECURITY
@@ -281,6 +296,59 @@ def home():
         packages_by_duration=PACKAGES_BY_DURATION,
         merchant_code=AIRTEL_MERCHANT_CODE
     )
+
+
+# ==================================================
+# AIRTIME-TO-CASH CUSTOMER REQUESTS
+# ==================================================
+
+@app.route("/airtime/request", methods=["POST"])
+def airtime_request():
+
+    submitted = request.form.get("csrf_token", "")
+    saved = session.get("csrf_token", "")
+
+    if not saved or not hmac.compare_digest(submitted, saved):
+        return jsonify({"success": False, "message": "Security token expired. Refresh the page and try again."}), 400
+
+    network = request.form.get("network", "").strip()
+    airtime_phone = request.form.get("airtime_phone", "").strip()
+    payout_phone = request.form.get("payout_phone", "").strip()
+    amount_raw = request.form.get("airtime_amount", "").strip()
+
+    try:
+        amount = int(amount_raw)
+    except (TypeError, ValueError):
+        amount = 0
+
+    if network not in NETWORKS:
+        error = "Choose MTN, Airtel or Lyca."
+    elif not valid_uganda_phone(airtime_phone) or not valid_uganda_phone(payout_phone):
+        error = "Enter valid Ugandan phone numbers for both fields."
+    elif amount < 1000 or amount > 2000000:
+        error = "Enter an airtime amount between UGX 1,000 and UGX 2,000,000."
+    else:
+        error = None
+
+    if error:
+        return jsonify({"success": False, "message": error}), 400
+
+    reference = "NXA-" + secrets.token_hex(4).upper()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_db() as conn:
+        conn.execute("""
+            INSERT INTO airtime_requests (
+                reference, network, airtime_phone, airtime_amount,
+                payout_phone, status, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, 'Pending', ?, ?)
+        """, (reference, network, airtime_phone, amount, payout_phone, now, now))
+
+    return jsonify({
+        "success": True,
+        "message": "Your request has been received. NEXORA will verify the airtime before confirming any payout.",
+        "reference": reference
+    })
 
 
 # ==================================================
@@ -1232,6 +1300,10 @@ def admin_dashboard():
             )
         """).fetchone()[0]
 
+        airtime_requests = conn.execute("""
+            SELECT * FROM airtime_requests ORDER BY id DESC
+        """).fetchall()
+
     return render_template(
         "admin_dashboard.html",
         orders=orders,
@@ -1240,7 +1312,9 @@ def admin_dashboard():
         verified=verified,
         completed=completed,
         revenue=revenue,
-        statuses=STATUSES
+        statuses=STATUSES,
+        airtime_requests=airtime_requests,
+        airtime_statuses=["Pending", "Verifying", "Airtime Verified", "Payout Sent", "Rejected"]
     )
 
 
@@ -1311,6 +1385,60 @@ def update_order(order_id):
         "success"
     )
 
+    return redirect(url_for("admin_dashboard"))
+
+
+# ==================================================
+# UPDATE AIRTIME-TO-CASH REQUEST
+# ==================================================
+
+@app.route("/admin/airtime/update/<int:request_id>", methods=["POST"])
+@admin_required
+def update_airtime_request(request_id):
+
+    check_csrf()
+    new_status = request.form.get("status", "").strip()
+    payout_raw = request.form.get("payout_amount", "").strip()
+    allowed = ["Pending", "Verifying", "Airtime Verified", "Payout Sent", "Rejected"]
+
+    if new_status not in allowed:
+        flash("Invalid airtime request status.", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    payout_amount = None
+    if payout_raw:
+        try:
+            payout_amount = int(payout_raw)
+            if payout_amount < 1 or payout_amount > 2000000:
+                raise ValueError
+        except ValueError:
+            flash("Enter a valid payout amount in UGX.", "error")
+            return redirect(url_for("admin_dashboard"))
+
+    with get_db() as conn:
+        current = conn.execute(
+            "SELECT * FROM airtime_requests WHERE id = ?", (request_id,)
+        ).fetchone()
+        if current is None:
+            abort(404)
+
+        if new_status == "Payout Sent":
+            if not payout_amount:
+                payout_amount = current["payout_amount"]
+            if not payout_amount:
+                flash("Enter and save the actual payout amount before marking payout sent.", "error")
+                return redirect(url_for("admin_dashboard"))
+            if current["status"] not in ("Airtime Verified", "Payout Sent"):
+                flash("Verify receipt of the airtime before marking a payout as sent.", "error")
+                return redirect(url_for("admin_dashboard"))
+
+        conn.execute("""
+            UPDATE airtime_requests
+            SET status = ?, payout_amount = COALESCE(?, payout_amount), updated_at = ?
+            WHERE id = ?
+        """, (new_status, payout_amount, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), request_id))
+
+    flash("Airtime request updated.", "success")
     return redirect(url_for("admin_dashboard"))
 
 
