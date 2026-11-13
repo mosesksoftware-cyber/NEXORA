@@ -50,14 +50,14 @@ NETWORKS = ["MTN", "Airtel", "Lyca"]
 
 PACKAGES_BY_DURATION = {
     "Weekly": [
-        {"gb": "7 GB", "price": 4000},
-        {"gb": "8.5 GB", "price": 5500},
-        {"gb": "10 GB", "price": 7000},
-        {"gb": "12.5 GB", "price": 9000}
+        {"gb": "12 GB", "price": 9000},
+        {"gb": "15 GB", "price": 11000},
+        {"gb": "17.5 GB", "price": 13000},
+        {"gb": "19 GB", "price": 15000}
     ],
 
     "Monthly": [
-        {"gb": "10 GB", "price": 7000},
+        # 10 GB at UGX 7,000 is disabled.
         {"gb": "15 GB", "price": 10000},
         {"gb": "20 GB", "price": 15000},
         {"gb": "25 GB", "price": 20000},
