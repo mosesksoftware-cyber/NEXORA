@@ -53,7 +53,7 @@ button,a {-webkit-tap-highlight-color:transparent}
 .section-heading h2 {margin:0;font-size:19px}
 .section-heading small {color:var(--muted)}
 .services {display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.service {background:var(--yellow);padding:17px;border-radius:19px;box-shadow:0 5px 15px #10204408;text-decoration:none;color:var(--navy);min-height:125px}
+.service {background:white;padding:17px;border-radius:19px;box-shadow:0 5px 15px #10204408;text-decoration:none;color:var(--navy);min-height:125px}
 .service-icon {font-size:29px;margin-bottom:13px}
 .service h3 {margin:0 0 6px;font-size:16px}
 .service p {margin:0;color:var(--muted);font-size:12px}
@@ -61,8 +61,27 @@ button,a {-webkit-tap-highlight-color:transparent}
 .promo h3 {margin:0 0 5px;font-size:17px}
 .promo p {margin:0;font-size:12px}
 .promo-icon {font-size:35px}
+.service-announcement {
+    background:#fff0f6;
+    border:1px solid #f3b6d0;
+    border-left:5px solid #e83e83;
+    color:#17213b;
+    padding:16px;
+    border-radius:14px;
+    margin:0 0 22px;
+    line-height:1.6;
+    font-size:13px;
+}
+.service-announcement h3 {
+    color:#d52d76;
+    margin:0 0 10px;
+    font-size:16px;
+}
+.service-announcement p {
+    margin:8px 0;
+}
 .network-grid {display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.network-card {background:var(--yellow);border:2px solid transparent;border-radius:16px;padding:18px 5px;text-align:center;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy)}
+.network-card {background:white;border:2px solid transparent;border-radius:16px;padding:18px 5px;text-align:center;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy)}
 .network-card.selected {border-color:var(--blue);background:#eaf0ff}
 .network-logo {width:43px;height:43px;border-radius:13px;margin:0 auto 10px;display:grid;place-items:center;font-weight:900;font-size:13px;color:white}
 .logo-mtn {background:#ffcc00;color:#171717}
@@ -77,13 +96,10 @@ button,a {-webkit-tap-highlight-color:transparent}
 .package-heading h2 {margin:0 0 6px;font-size:19px}
 .package-heading p {margin:0;color:#dce5ff;font-size:12px}
 .duration-grid,.package-grid {display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.duration-card {border:2px solid transparent;background:var(--yellow);color:var(--navy);border-radius:16px;padding:20px 10px;font-size:16px;font-weight:900;cursor:pointer}
-.duration-card:disabled {opacity:.55;cursor:not-allowed;background:#e9ecf2;color:#778198}
+.duration-card {border:2px solid transparent;background:white;color:var(--navy);border-radius:16px;padding:20px 10px;font-size:16px;font-weight:900;cursor:pointer}
 .duration-card.selected {border-color:var(--blue);background:#edf2ff}
-.package-card {position:relative;background:var(--yellow);border:2px solid transparent;padding:17px;border-radius:17px;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy);text-align:left;min-height:105px}
+.package-card {position:relative;background:white;border:2px solid transparent;padding:17px;border-radius:17px;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy);text-align:left;min-height:105px}
 .package-card.selected {border-color:var(--blue);background:#edf2ff}
-.package-card:disabled {opacity:.55;cursor:not-allowed;background:#e9ecf2;color:#778198;border-color:#d8dce5}
-.package-card:disabled .price {color:#778198}
 .package-card .gb {font-size:23px;font-weight:900}
 .package-card .price {margin-top:9px;color:var(--blue);font-weight:900}
 .package-card small {display:block;margin-top:7px;color:var(--muted);font-size:11px}
@@ -91,7 +107,7 @@ button,a {-webkit-tap-highlight-color:transparent}
 .package-card.selected .check {display:block}
 .sheet-overlay {position:fixed;inset:0;background:#0009;z-index:200;display:none;align-items:flex-end;justify-content:center}
 .sheet-overlay.show {display:flex}
-.sheet {width:100%;max-width:520px;max-height:94vh;overflow-y:auto;background:var(--yellow);border-radius:25px 25px 0 0;padding:12px 21px 30px;animation:slideUp .3s ease}
+.sheet {width:100%;max-width:520px;max-height:94vh;overflow-y:auto;background:white;border-radius:25px 25px 0 0;padding:12px 21px 30px;animation:slideUp .3s ease}
 @keyframes slideUp {from{transform:translateY(100%)}to{transform:translateY(0)}}
 .sheet-handle {width:45px;height:5px;background:#d8dce5;border-radius:10px;margin:3px auto 20px}
 .sheet-header {display:flex;align-items:center;justify-content:space-between}
@@ -123,7 +139,7 @@ input:focus {border-color:var(--blue);box-shadow:0 0 0 3px #2454dc18}
 .loading {text-align:center;color:var(--muted);padding:15px;font-size:13px}
 footer {background:var(--navy);color:white;padding:27px 18px;text-align:center;margin-top:30px}
 footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
-.bottom-nav {position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:grid;grid-template-columns:repeat(3,1fr);background:var(--yellow);box-shadow:0 -4px 20px #00000012;padding:10px 5px calc(10px + env(safe-area-inset-bottom));z-index:100}
+.bottom-nav {position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:grid;grid-template-columns:repeat(3,1fr);background:white;box-shadow:0 -4px 20px #00000012;padding:10px 5px calc(10px + env(safe-area-inset-bottom));z-index:100}
 .bottom-nav a {text-align:center;text-decoration:none;color:#929bad;font-size:11px;font-weight:bold}
 .bottom-nav a.active {color:var(--blue)}
 .bottom-nav span {display:block;font-size:22px;margin-bottom:4px}
@@ -148,6 +164,15 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
 
 <main class="content">
 
+<div class="service-announcement" role="status" aria-label="NEXORA service announcement">
+    <h3>📢 NEXORA Service Announcement</h3>
+    <p><strong>Dear Valued Customer,</strong></p>
+    <p>We sincerely apologize for the inconvenience caused while delivering your requested data packages.</p>
+    <p>We are currently improving our services to provide a better and more reliable customer experience.</p>
+    <p>We will notify you as soon as our services return to normal operation.</p>
+    <p>Thank you for your patience, understanding and continued support.</p>
+    <strong>NEXORA — Your Digital World, Simplified. 🚀</strong>
+</div>
 
 <div class="section-heading">
     <h2>Our Services</h2>
@@ -169,6 +194,11 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
         <div class="service-icon">💳</div>
         <h3>Already Paid?</h3>
         <p>Complete your order</p>
+    </a>
+    <a href="#" class="service" id="serviceAirtimeButton">
+        <div class="service-icon">💸</div>
+        <h3>Airtime to Cash</h3>
+        <p>Request a payout</p>
     </a>
 </div>
 
@@ -204,7 +234,7 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
             <p id="durationNetworkLabel">Select Weekly or Monthly.</p>
         </div>
         <div class="duration-grid">
-            <button type="button" class="duration-card" data-duration="Weekly" disabled aria-disabled="true" title="Weekly bundles are currently unavailable">📅<br><br>WEEKLY<br><small>Currently unavailable</small></button>
+            <button type="button" class="duration-card" data-duration="Weekly">📅<br><br>WEEKLY</button>
             <button type="button" class="duration-card" data-duration="Monthly">🗓️<br><br>MONTHLY</button>
         </div>
     </div>
@@ -225,6 +255,35 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
     <p>Affordable data bundles in Uganda 🇺🇬</p>
     <p>© 2026 NEXORA. All rights reserved.</p>
 </footer>
+</div>
+
+<!-- AIRTIME TO CASH REQUEST -->
+<div class="sheet-overlay" id="airtimeOverlay">
+<div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+        <h2>Airtime to Cash</h2>
+        <button type="button" class="close-button" id="closeAirtime">×</button>
+    </div>
+    <p style="color:#778198;font-size:13px;line-height:1.6">Submit your request for manual review. The payout amount will be confirmed by NEXORA after the airtime is verified.</p>
+    <form id="airtimeForm" action="{{ url_for('airtime_request') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Network</label>
+        <select name="network" required style="width:100%;padding:13px;border:1px solid #ccd3e2;border-radius:8px;margin:8px 0 16px">
+            <option value="">Choose network</option>
+            <option value="MTN">MTN</option><option value="Airtel">Airtel</option><option value="Lyca">Lyca</option>
+        </select>
+        <label>Phone number holding the airtime</label>
+        <input type="tel" name="airtime_phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
+        <label>Airtime amount (UGX)</label>
+        <input type="number" name="airtime_amount" min="1000" max="2000000" step="1" placeholder="e.g. 10000" required>
+        <label>Mobile Money number to receive payout</label>
+        <input type="tel" name="payout_phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
+        <div class="notice">Submitting a request does not guarantee a payout or a fixed exchange rate. NEXORA must verify receipt of airtime first. Never share your PIN or OTP.</div>
+        <div id="airtimeMessage"></div>
+        <button type="submit" class="submit-button" id="airtimeSubmit">SUBMIT AIRTIME REQUEST →</button>
+    </form>
+</div>
 </div>
 
 <!-- ORDER FORM -->
@@ -441,7 +500,8 @@ const overlays = [
     $("paymentOverlay"),
     $("trackingOverlay"),
     $("generalTrackingOverlay"),
-    $("alreadyPaidOverlay")
+    $("alreadyPaidOverlay"),
+    $("airtimeOverlay")
 ];
 
 function money(value) {
@@ -550,18 +610,11 @@ function displayPackages() {
         button.dataset.package = item.gb;
         button.dataset.price = item.price;
 
-        const unavailable = selectedDuration === "Monthly" &&
-            item.gb === "10 GB" && item.price === 7000;
-        button.disabled = unavailable;
-        if (unavailable) {
-            button.title = "This monthly package is currently unavailable";
-        }
-
         button.innerHTML = `
             <span class="check">✓</span>
             <div class="gb">${escapeHTML(item.gb)}</div>
             <div class="price">${money(item.price)}</div>
-            <small>${unavailable ? "Currently unavailable" : escapeHTML(selectedDuration) + " bundle"}</small>
+            <small>${escapeHTML(selectedDuration)} bundle</small>
         `;
 
         button.addEventListener("click", () => selectPackage(button));
@@ -720,6 +773,32 @@ $("alreadyPaidForm").addEventListener("submit", async event => {
         showMessage($("alreadyPaidMessage"), error.message);
         button.disabled = false;
         button.textContent = "COMPLETE MY ORDER →";
+    }
+});
+
+/* AIRTIME TO CASH */
+$("serviceAirtimeButton").addEventListener("click", event => {
+    event.preventDefault();
+    $("airtimeForm").reset();
+    $("airtimeMessage").innerHTML = "";
+    showScreen($("airtimeOverlay"));
+});
+
+$("airtimeForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!$("airtimeForm").reportValidity()) return;
+    const button = $("airtimeSubmit");
+    button.disabled = true;
+    button.textContent = "SUBMITTING...";
+    try {
+        const data = await postForm($("airtimeForm").action, new FormData($("airtimeForm")));
+        showMessage($("airtimeMessage"), data.message + " Reference: " + data.reference, "success");
+        $("airtimeForm").reset();
+    } catch (error) {
+        showMessage($("airtimeMessage"), error.message);
+    } finally {
+        button.disabled = false;
+        button.textContent = "SUBMIT AIRTIME REQUEST →";
     }
 });
 
@@ -943,6 +1022,7 @@ function resetHome(event) {
     $("orderForm").reset();
     $("trackingForm").reset();
     $("alreadyPaidForm").reset();
+    $("airtimeForm").reset();
 
     $("orderError").innerHTML = "";
     $("trackingError").innerHTML = "";
@@ -967,7 +1047,8 @@ $("bundlesButton").addEventListener("click", () => {
     "closePayment",
     "closeTracking",
     "closeGeneralTracking",
-    "closeAlreadyPaid"
+    "closeAlreadyPaid",
+    "closeAirtime"
 ].forEach(id => {
     $(id).addEventListener("click", closeScreens);
 });
