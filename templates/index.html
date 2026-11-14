@@ -70,6 +70,12 @@ button,a{-webkit-tap-highlight-color:transparent}
 .network-card strong{display:block;font-size:12px}.network-card small{color:var(--muted);font-size:10px}
 .selection-panel{display:none;margin-top:16px}.selection-panel.show{display:block;animation:drop .3s ease}
 @keyframes drop{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+/* Bundle area stays hidden until the visitor requests Buy Data. */
+#bundles{display:none;scroll-margin-top:14px}
+#bundles.open{display:block;animation:bundleEnter .42s ease both}
+@keyframes bundleEnter{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.service,.network-card,.duration-card,.package-card,.bottom-nav a{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease,background .22s ease}
+.network-card:active,.duration-card:active,.package-card:active{transform:scale(.97)}
 .package-heading{background:linear-gradient(135deg,#091936,#2454dc);color:#fff;padding:14px;border-radius:13px;margin-bottom:10px}
 .package-heading h2{margin:0 0 4px;font-size:17px}.package-heading p{margin:0;color:#dce5ff;font-size:11px}
 .duration-grid,.package-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
@@ -496,6 +502,24 @@ const packages = {
 
 const $ = id => document.getElementById(id);
 
+/* REVEAL THE BUNDLE FLOW ONLY AFTER BUY DATA IS PRESSED */
+function openBundles(event) {
+    if (event) event.preventDefault();
+
+    closeScreens();
+    const section = $("bundles");
+    section.classList.add("open");
+    activeNav("bundlesButton");
+
+    requestAnimationFrame(() => {
+        section.scrollIntoView({behavior:"smooth", block:"start"});
+    });
+}
+
+document.querySelectorAll('.service[href="#bundles"], .hero-button').forEach(link => {
+    link.addEventListener("click", openBundles);
+});
+
 let selectedNetwork = "";
 let selectedDuration = "";
 let selectedPackage = "";
@@ -828,8 +852,6 @@ function openGeneralTracking(event) {
 }
 
 $("trackButton").addEventListener("click", openGeneralTracking);
-// This button is not present in the compact homepage. Keep this optional
-// listener guarded so a missing element cannot stop the rest of the app.
 const serviceTrackButton = $("serviceTrackButton");
 if (serviceTrackButton) {
     serviceTrackButton.addEventListener("click", openGeneralTracking);
@@ -1048,6 +1070,7 @@ function resetHome(event) {
     $("generalTrackingResult").innerHTML = "";
     $("alreadyPaidMessage").innerHTML = "";
 
+    $("bundles").classList.remove("open");
     activeNav("homeButton");
     window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1055,10 +1078,7 @@ function resetHome(event) {
 $("homeButton").addEventListener("click", resetHome);
 $("trackingHomeButton").addEventListener("click", resetHome);
 
-$("bundlesButton").addEventListener("click", () => {
-    closeScreens();
-    activeNav("bundlesButton");
-});
+$("bundlesButton").addEventListener("click", openBundles);
 
 /* CLOSE BUTTONS */
 [
