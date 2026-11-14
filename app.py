@@ -152,6 +152,20 @@ def init_db():
                 ALTER TABLE orders
                 ADD COLUMN payment_reference TEXT
             """,
+            "payment_sms": """
+                ALTER TABLE orders
+                ADD COLUMN payment_sms TEXT
+            """,
+
+            "payment_analysis": """
+                ALTER TABLE orders
+                ADD COLUMN payment_analysis TEXT
+            """,
+
+            "payment_evidence_submitted_at": """
+                ALTER TABLE orders
+                ADD COLUMN payment_evidence_submitted_at TEXT
+            """,
 
             "payment_verified_at": """
                 ALTER TABLE orders
@@ -1072,345 +1086,155 @@ def track_order():
 
     order = None
     error = None
-
-    prefill_tracking_code = request.args.get(
-        "tracking_code", ""
-    ).strip().upper()
+    prefill_tracking_code = request.args.get("tracking_code", "").strip().upper()
 
     if request.method == "POST":
-
-        tracking_code = request.form.get(
-            "tracking_code", ""
-        ).strip().upper()
-
-        phone = request.form.get(
-            "phone", ""
-        ).strip()
-
+        tracking_code = request.form.get("tracking_code", "").strip().upper()
+        phone = request.form.get("phone", "").strip()
+        payment_reference = request.form.get("payment_reference", "").strip().upper()
+        payment_sms = request.form.get("payment_sms", "").strip()
+        payment_phone = request.form.get("payment_phone", "").strip()
         prefill_tracking_code = tracking_code
 
-        if not tracking_code or not valid_uganda_phone(phone):
+        if not re.fullmatch(r"MKS-[A-F0-9]{10}", tracking_code):
+            error = "Tracking code format looks incorrect. It should look like MKS-XXXXXXXXXX."
+        elif not valid_uganda_phone(phone):
+            error = "Enter a valid Ugandan number used to receive the data (07XXXXXXXX or 2567XXXXXXXX)."
+        elif len(payment_reference) > 40:
+            error = "Transaction ID is too long. Check it and try again."
+        elif len(payment_sms) > 1200:
+            error = "Payment SMS is too long. Paste only the payment confirmation message."
+        elif (payment_reference or payment_sms or payment_phone) and not payment_phone:
+            error = "Enter the mobile money number you paid from when submitting payment details."
+        elif (payment_reference or payment_sms or payment_phone) and not valid_uganda_phone(payment_phone):
+            error = "The number you paid from must be a valid Ugandan mobile number."
+        elif (payment_reference or payment_sms or payment_phone) and not (payment_reference or payment_sms):
+            error = "Enter a transaction ID or paste the payment SMS."
+        elif payment_reference and not re.fullmatch(r"[A-Z0-9][A-Z0-9-]{5,39}", payment_reference):
+            error = "Transaction ID format looks unusual. Check the reference exactly as shown in your SMS."
 
-            error = "Enter a valid tracking reference and phone number."
-
-        else:
+        analysis = []
+        if not error:
+            if payment_reference:
+                analysis.append("Transaction ID format: looks acceptable; it still needs merchant-side verification.")
+            if payment_sms:
+                sms_digits = re.sub(r"\D", "", payment_sms)
+                expected_amount = None
+                # Match common SMS amount formats, without assuming the SMS itself proves payment.
+                amount_match = re.search(r"(?:UGX|UGANDA SHILLINGS|SHS)\s*([0-9][0-9, ]*)", payment_sms, re.I)
+                if amount_match:
+                    try:
+                        sms_amount = int(re.sub(r"\D", "", amount_match.group(1)))
+                    except ValueError:
+                        sms_amount = 0
+                else:
+                    sms_amount = 0
+                analysis.append("SMS length: acceptable." if len(payment_sms) >= 20 else "SMS looks unusually short; paste the complete message.")
+                if sms_amount:
+                    analysis.append("Amount found in SMS: UGX {:,}.".format(sms_amount))
+                else:
+                    analysis.append("Could not reliably read an UGX amount from the SMS; NEXORA staff should inspect it.")
+                if AIRTEL_MERCHANT_CODE and AIRTEL_MERCHANT_CODE in payment_sms:
+                    analysis.append("Merchant code appears in the SMS; confirm it matches the merchant account.")
+                else:
+                    analysis.append("Merchant code was not detected in the SMS; staff must confirm the recipient from merchant records.")
+            analysis.append("Security check: these checks do not verify that money reached NEXORA.")
 
             with get_db() as conn:
-
                 order = conn.execute("""
-                    SELECT tracking_code, network, duration, package,
-                           amount, status, created_at, payment_submitted_at
+                    SELECT tracking_code, network, duration, package, amount,
+                           status, created_at, payment_submitted_at,
+                           payment_reference, payment_phone, payment_sms,
+                           payment_analysis, payment_evidence_submitted_at
                     FROM orders
                     WHERE tracking_code = ? AND phone = ?
-                """, (
-                    tracking_code,
-                    phone
-                )).fetchone()
+                """, (tracking_code, phone)).fetchone()
 
-            if order is None:
-
-                error = "Order not found. Check your tracking reference and phone number."
+                if order is None:
+                    error = "Order not found. Check your tracking code and the phone number used to receive the data."
+                elif payment_reference or payment_sms:
+                    if payment_sms:
+                        amount_match = re.search(r"(?:UGX|UGANDA SHILLINGS|SHS)\s*([0-9][0-9, ]*)", payment_sms, re.I)
+                        if amount_match:
+                            sms_amount = int(re.sub(r"\D", "", amount_match.group(1)) or "0")
+                            if sms_amount == int(order["amount"]):
+                                analysis.append("Amount check: SMS amount matches this order.")
+                            else:
+                                analysis.append("Amount warning: SMS amount does not match this order's expected amount of UGX {:,}. Staff review is required.".format(order["amount"]))
+                        paid_phone_digits = re.sub(r"\D", "", payment_phone)
+                        sms_digits = re.sub(r"\D", "", payment_sms)
+                        if paid_phone_digits and paid_phone_digits[-9:] in sms_digits:
+                            analysis.append("Sender number check: the paid-from number appears in the SMS.")
+                        else:
+                            analysis.append("Sender number warning: the paid-from number was not found in the SMS; staff should compare it with merchant records.")
+                    if order["status"] != "Awaiting Payment":
+                        error = "This order has already moved beyond payment review. Contact NEXORA if you need help."
+                    else:
+                        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        conn.execute("""
+                            UPDATE orders
+                            SET payment_reference = ?, payment_phone = ?,
+                                payment_sms = ?, payment_analysis = ?,
+                                payment_evidence_submitted_at = ?,
+                                payment_submitted_at = COALESCE(payment_submitted_at, ?)
+                            WHERE tracking_code = ? AND phone = ?
+                        """, (payment_reference or None, payment_phone or None,
+                              payment_sms or None, "\n".join(analysis), now, now,
+                              tracking_code, phone))
+                        order = conn.execute("""
+                            SELECT tracking_code, network, duration, package, amount,
+                                   status, created_at, payment_submitted_at,
+                                   payment_reference, payment_phone, payment_sms,
+                                   payment_analysis, payment_evidence_submitted_at
+                            FROM orders WHERE tracking_code = ? AND phone = ?
+                        """, (tracking_code, phone)).fetchone()
 
         if is_ajax_request():
-
             if error:
+                return jsonify({"success": False, "message": error}), 400
 
-                return jsonify({
-                    "success": False,
-                    "message": error
-                }), 400
-
-            return jsonify({
-
-                "success": True,
-
-                "order": {
-                    "tracking_code": order["tracking_code"],
-                    "network": order["network"],
-                    "duration": order["duration"],
-                    "package": order["package"],
-                    "amount": order["amount"],
-                    "status": order["status"],
-                    "created_at": order["created_at"],
-                    "payment_submitted_at": order["payment_submitted_at"]
-                }
-            })
+            saved_analysis = []
+            if order["payment_analysis"]:
+                saved_analysis = order["payment_analysis"].splitlines()
+            return jsonify({"success": True, "order": {
+                "tracking_code": order["tracking_code"],
+                "network": order["network"],
+                "duration": order["duration"],
+                "package": order["package"],
+                "amount": order["amount"],
+                "status": order["status"],
+                "created_at": order["created_at"],
+                "payment_submitted_at": order["payment_submitted_at"],
+                "payment_evidence_submitted": bool(order["payment_evidence_submitted_at"]),
+                "payment_reference": order["payment_reference"],
+                "payment_phone": order["payment_phone"],
+                "payment_analysis": saved_analysis
+            }})
 
     return render_template_string("""
-
-    <!DOCTYPE html>
-    <html lang="en">
-
-    <head>
-
-        <meta charset="UTF-8">
-
-        <meta name="viewport"
-              content="width=device-width, initial-scale=1">
-
-        <title>Track Order | NEXORA</title>
-
-        <style>
-
-            body {
-                margin: 0;
-                padding: 20px;
-                font-family: Arial;
-                background: #f3f5fa;
-                color: #091936;
-            }
-
-            .container {
-                max-width: 480px;
-                margin: 35px auto;
-                background: white;
-                padding: 25px;
-                border-radius: 15px;
-            }
-
-            input {
-                width: 100%;
-                padding: 13px;
-                margin: 9px 0 17px;
-                border: 1px solid #ccd3e0;
-                border-radius: 7px;
-                box-sizing: border-box;
-            }
-
-            button {
-                width: 100%;
-                padding: 14px;
-                background: #2454dc;
-                color: white;
-                border: 0;
-                border-radius: 7px;
-                font-size: 15px;
-            }
-
-            .error {
-                background: #ffe9e9;
-                color: #a00000;
-                padding: 12px;
-                border-radius: 7px;
-            }
-
-            .result, .step {
-                background: #edf2ff;
-                padding: 13px;
-                border-radius: 8px;
-                margin-top: 10px;
-            }
-
-            .current {
-                background: #d8f3df;
-            }
-
-            .rejected {
-                background: #ffe5e5;
-                color: #a00000;
-            }
-
-            .service-announcement {
-                background: #fff0f6;
-                border: 1px solid #f3b6d0;
-                border-left: 5px solid #e83e83;
-                color: #17213b;
-                padding: 15px;
-                border-radius: 10px;
-                margin: 18px 0;
-                text-align: left;
-                line-height: 1.6;
-                font-size: 14px;
-            }
-
-            .service-announcement h4 {
-                color: #d52d76;
-                margin: 0 0 9px;
-                font-size: 16px;
-            }
-
-            .service-announcement p {
-                margin: 8px 0;
-            }
-
-            a {
-                display: block;
-                text-align: center;
-                margin-top: 20px;
-                color: #2454dc;
-            }
-
-        </style>
-
-    </head>
-
-    <body>
-
-        <div class="container">
-
-            <h2>NEXORA</h2>
-
-            <h3>Track Your Order</h3>
-
-            <div class="service-announcement">
-                <h4>📢 NEXORA Service Announcement</h4>
-
-                <p><strong>Dear Valued Customer,</strong></p>
-
-                <p>
-                    We sincerely apologize for the inconvenience caused
-                    while delivering your requested data packages.
-                </p>
-
-                <p>
-                    We are currently improving our services to provide
-                    a better and more reliable customer experience.
-                </p>
-
-                <p>
-                    We will notify you as soon as our services return
-                    to normal operation.
-                </p>
-
-                <p>
-                    Thank you for your patience, understanding and
-                    continued support.
-                </p>
-
-                <strong>NEXORA — Your Digital World, Simplified. 🚀</strong>
-            </div>
-
-            <p>
-                Enter your tracking reference and the phone number
-                used when ordering.
-            </p>
-
-            {% if error %}
-
-                <div class="error">
-                    {{ error }}
-                </div>
-
-            {% endif %}
-
-            <form method="POST">
-
-                <label>Tracking Reference</label>
-
-                <input
-                    name="tracking_code"
-                    value="{{ prefill_tracking_code }}"
-                    placeholder="MKS-XXXXXXXXXX"
-                    required
-                >
-
-                <label>Order Phone Number</label>
-
-                <input
-                    type="tel"
-                    name="phone"
-                    placeholder="07XXXXXXXX"
-                    pattern="07[0-9]{8}|2567[0-9]{8}"
-                    required
-                >
-
-                <button type="submit">
-                    TRACK ORDER
-                </button>
-
-            </form>
-
-            {% if order %}
-
-                <div class="result">
-
-                    <p>
-                        <strong>Reference:</strong>
-                        {{ order["tracking_code"] }}
-                    </p>
-
-                    <p>
-                        <strong>Network:</strong>
-                        {{ order["network"] }}
-                    </p>
-
-                    <p>
-                        <strong>Duration:</strong>
-                        {{ order["duration"] }}
-                    </p>
-
-                    <p>
-                        <strong>Package:</strong>
-                        {{ order["package"] }}
-                    </p>
-
-                    <p>
-                        <strong>Amount:</strong>
-                        UGX {{ "{:,}".format(order["amount"]) }}
-                    </p>
-
-                    <p>
-                        <strong>Order date:</strong>
-                        {{ order["created_at"] }}
-                    </p>
-
-                    <p>
-                        <strong>Status:</strong>
-                        {{ order["status"] }}
-                    </p>
-
-                    {% if order["status"] == "Rejected" %}
-
-                        <div class="step rejected">
-                            Order rejected. Please contact NEXORA.
-                        </div>
-
-                    {% else %}
-
-                        {% set steps = [
-                            "Awaiting Payment",
-                            "Payment Verified",
-                            "Sent to Supplier",
-                            "Completed"
-                        ] %}
-
-                        {% set current = steps.index(order["status"])
-                            if order["status"] in steps else -1 %}
-
-                        {% for step in steps %}
-
-                            <div class="step {% if current >= loop.index0 %}current{% endif %}">
-
-                                {% if current >= loop.index0 %}
-                                    ✓
-                                {% else %}
-                                    ○
-                                {% endif %}
-
-                                {{ step }}
-
-                            </div>
-
-                        {% endfor %}
-
-                    {% endif %}
-
-                </div>
-
-            {% endif %}
-
-            <a href="/">Back to NEXORA</a>
-
-        </div>
-
-    </body>
-
-    </html>
-
-    """,
-    order=order,
-    error=error,
-    prefill_tracking_code=prefill_tracking_code)
+    <!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Track Order | NEXORA</title>
+    <style>
+    body{margin:0;padding:20px;font-family:Arial;background:#f3f5fa;color:#091936}
+    .container{max-width:480px;margin:35px auto;background:#fff;padding:25px;border-radius:15px}
+    input{width:100%;padding:13px;margin:9px 0 17px;border:1px solid #ccd3e0;border-radius:7px;box-sizing:border-box}
+    button{width:100%;padding:14px;background:#2454dc;color:#fff;border:0;border-radius:7px;font-size:15px}
+    .error{background:#ffe9e9;color:#a00000;padding:12px;border-radius:7px}
+    .result,.step{background:#edf2ff;padding:13px;border-radius:8px;margin-top:10px}
+    a{display:block;text-align:center;margin-top:20px;color:#2454dc}
+    </style></head><body><div class="container">
+    <h2>NEXORA</h2><h3>Track Your Order</h3>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <p>Use your tracking code and the phone number used to receive the data.</p>
+    <form method="POST">
+      <label>Tracking Code</label><input name="tracking_code" value="{{ prefill_tracking_code }}" placeholder="MKS-XXXXXXXXXX" required>
+      <label>Phone Number Receiving Data</label><input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
+      <button type="submit">TRACK MY ORDER</button>
+    </form>
+    <a href="/">Return to NEXORA</a>
+    </div></body></html>
+    """, error=error, prefill_tracking_code=prefill_tracking_code)
 
 
 # ==================================================
