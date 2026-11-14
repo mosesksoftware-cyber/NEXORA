@@ -264,6 +264,34 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
 </div>
 </div>
 
+<!-- DATA DURATION PICKER -->
+<div class="sheet-overlay" id="durationPickerOverlay">
+<div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+        <h2>Choose duration</h2>
+        <button type="button" class="close-button" id="closeDurationPicker" aria-label="Close">×</button>
+    </div>
+    <p style="color:#778198;font-size:13px;margin:9px 0 16px">Choose how long you want your data bundle to last.</p>
+    <div id="durationSheetContent"></div>
+    <button type="button" class="action-button secondary" id="backToNetwork">← Back to network</button>
+</div>
+</div>
+
+<!-- DATA PACKAGE PICKER -->
+<div class="sheet-overlay" id="packagePickerOverlay">
+<div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+        <h2>Choose a data package</h2>
+        <button type="button" class="close-button" id="closePackagePicker" aria-label="Close">×</button>
+    </div>
+    <p style="color:#778198;font-size:13px;margin:9px 0 16px">Select your preferred data bundle.</p>
+    <div id="packageSheetContent"></div>
+    <button type="button" class="action-button secondary" id="backToDuration">← Back to duration</button>
+</div>
+</div>
+
 <!-- AIRTIME TO CASH REQUEST -->
 <div class="sheet-overlay" id="airtimeOverlay">
 <div class="sheet">
@@ -525,7 +553,7 @@ const packages = {
 
 const $ = id => document.getElementById(id);
 
-/* BUY DATA OPENS A NETWORK PICKER SHEET INSTEAD OF SCROLLING */
+/* ALL BUY-DATA STEPS USE BOTTOM-SHEET PICKERS */
 function openBundles(event) {
     if (event) event.preventDefault();
     closeScreens();
@@ -537,21 +565,17 @@ document.querySelectorAll('.service[href="#bundles"], .hero-button').forEach(lin
     link.addEventListener("click", openBundles);
 });
 
-document.querySelectorAll(".network-prompt-card").forEach(button => {
-    button.addEventListener("click", () => {
-        const network = button.dataset.network;
-        closeScreens();
-        $("bundles").classList.add("open");
-        const matchingCard = document.querySelector('.network-card[data-network="' + network + '"]');
-        if (matchingCard) matchingCard.click();
-        requestAnimationFrame(() => {
-            $("durationSection").scrollIntoView({behavior:"smooth", block:"start"});
-        });
-    });
-});
-$("closeNetworkPicker").addEventListener("click", () => {
-    closeScreens();
-});
+// Move the existing duration and package interfaces into their own sheets.
+$("durationSection").classList.add("show");
+$("packageSection").classList.add("show");
+$("durationSheetContent").appendChild($("durationSection"));
+$("packageSheetContent").appendChild($("packageSection"));
+
+$("closeNetworkPicker").addEventListener("click", closeScreens);
+$("closeDurationPicker").addEventListener("click", closeScreens);
+$("closePackagePicker").addEventListener("click", closeScreens);
+$("backToNetwork").addEventListener("click", () => showScreen($("networkPickerOverlay")));
+$("backToDuration").addEventListener("click", () => showScreen($("durationPickerOverlay")));
 
 let selectedNetwork = "";
 let selectedDuration = "";
@@ -564,6 +588,8 @@ let activeTracking = null;
 
 const overlays = [
     $("networkPickerOverlay"),
+    $("durationPickerOverlay"),
+    $("packagePickerOverlay"),
     $("orderOverlay"),
     $("confirmationOverlay"),
     $("paymentOverlay"),
@@ -642,10 +668,10 @@ document.querySelectorAll(".network-card").forEach(card => {
         document.querySelectorAll(".duration-card").forEach(x => x.classList.remove("selected"));
         $("packageSection").classList.remove("show");
         $("packageGrid").innerHTML = "";
-
         $("durationNetworkLabel").textContent = selectedNetwork + " Uganda — Choose your duration.";
         $("durationSection").classList.add("show");
-        $("durationSection").scrollIntoView({behavior:"smooth",block:"start"});
+
+        showScreen($("durationPickerOverlay"));
     });
 });
 
@@ -664,7 +690,7 @@ document.querySelectorAll(".duration-card").forEach(card => {
         $("selectedNetworkLabel").textContent = selectedNetwork + " · " + selectedDuration + " packages";
         displayPackages();
         $("packageSection").classList.add("show");
-        $("packageSection").scrollIntoView({behavior:"smooth",block:"start"});
+        showScreen($("packagePickerOverlay"));
     });
 });
 
