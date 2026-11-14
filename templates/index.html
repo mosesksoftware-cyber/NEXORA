@@ -452,29 +452,26 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
     </div>
 
     <p style="color:#778198;font-size:13px;line-height:1.6">
-        Already paid? Enter your order details and payment evidence here. NEXORA will check the information against its merchant records.
+        Enter the number receiving data and your payment confirmation details. You do not need your tracking code.
     </p>
 
     <form id="alreadyPaidForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <label>Order Tracking Code</label>
-        <input type="text" name="tracking_code" placeholder="e.g. MKS-XXXXXXXXXX" maxlength="50" autocomplete="off" required>
-
         <label>Phone Number Receiving Data</label>
-        <input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
+        <input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" autocomplete="tel" required>
 
-        <label>Transaction ID</label>
-        <input type="text" name="payment_reference" maxlength="40" placeholder="Enter transaction ID if available" autocomplete="off">
+        <label>Transaction ID (if available)</label>
+        <input type="text" name="payment_reference" placeholder="Enter transaction ID" maxlength="40" autocomplete="off">
 
-        <label>Or paste the complete payment SMS</label>
-        <textarea name="payment_sms" maxlength="1200" rows="4" placeholder="Paste the payment confirmation SMS here" style="width:100%;padding:13px;border:1px solid #dce1eb;border-radius:10px;background:#fafbfe;resize:vertical;font:14px Arial"></textarea>
+        <label>Or paste your payment SMS</label>
+        <textarea name="payment_sms" rows="4" maxlength="1200" placeholder="Paste the complete Airtel Money payment confirmation SMS" style="width:100%;padding:13px;border:1px solid #dce1eb;border-radius:10px;background:#fafbfe;font:16px Arial;resize:vertical"></textarea>
 
         <label>Number you paid from</label>
-        <input type="tel" name="payment_phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
+        <input type="tel" name="payment_phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" autocomplete="tel" required>
 
         <div class="notice">
-            Enter a transaction ID or paste the payment SMS, and provide the number used to make the payment. The checks help identify missing or inconsistent details, but do not prove payment. NEXORA must verify the merchant transaction. Never enter your Mobile Money PIN or OTP.
+            Enter a transaction ID or paste the payment SMS. NEXORA checks the details and verifies payment against its merchant records. This form never asks for your Mobile Money PIN or OTP.
         </div>
 
         <div id="alreadyPaidMessage"></div>
@@ -499,7 +496,6 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
         <input type="text" name="tracking_code" id="trackingCodeInput" placeholder="Enter tracking code" required>
         <label>Phone Number Receiving Data</label>
         <input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
-
         <div id="trackingError"></div>
         <button type="submit" class="submit-button" id="trackSubmitButton">TRACK MY ORDER →</button>
     </form>
@@ -820,9 +816,6 @@ $("paymentCompleteButton").addEventListener("click", () => {
     $("alreadyPaidForm").reset();
     $("alreadyPaidMessage").innerHTML = "";
 
-    $("alreadyPaidForm").elements.namedItem("tracking_code").value =
-        currentOrder.tracking_code || "";
-
     $("alreadyPaidForm").elements.namedItem("phone").value =
         currentOrder.phone || "";
 
@@ -851,29 +844,31 @@ $("alreadyPaidForm").addEventListener("submit", async event => {
 
     try {
         const formData = new FormData($("alreadyPaidForm"));
-        const transactionId = String(formData.get("payment_reference") || "").trim();
-        const paymentSms = String(formData.get("payment_sms") || "").trim();
-        const paidFrom = String(formData.get("payment_phone") || "").trim();
+        const paymentReference = (formData.get("payment_reference") || "").trim();
+        const paymentSms = (formData.get("payment_sms") || "").trim();
+        const phone = (formData.get("phone") || "").trim();
 
-        if (!transactionId && !paymentSms) {
-            throw new Error("Enter your transaction ID or paste the complete payment SMS.");
-        }
-        if (!paidFrom) {
-            throw new Error("Enter the mobile money number you paid from.");
+        if (!paymentReference && !paymentSms) {
+            throw new Error("Enter a transaction ID or paste your payment SMS.");
         }
 
         const data = await postForm("/track", formData);
-        const trackingCode = String(formData.get("tracking_code") || "").trim().toUpperCase();
-        const phone = String(formData.get("phone") || "").trim();
+        const order = data.order;
+        const trackingCode = order.tracking_code;
 
-        currentOrder = data.order || null;
+        currentOrder = { ...order, phone: phone };
         $("trackingCodeInput").value = trackingCode;
         $("trackingForm").elements.namedItem("phone").value = phone;
 
-        showTrackingScreen(trackingCode, phone, data.order);
+        $("trackingTitle").textContent = "Payment details received";
+        $("trackingDescription").textContent =
+            "Your payment evidence has been submitted for NEXORA review. It is not yet a payment confirmation.";
+
+        showTrackingScreen(trackingCode, phone, order);
 
     } catch (error) {
         showMessage($("alreadyPaidMessage"), error.message);
+    } finally {
         button.disabled = false;
         button.textContent = "SUBMIT PAYMENT DETAILS →";
     }
@@ -1003,11 +998,7 @@ function renderTrackingOrder(order) {
         Duration: ${escapeHTML(order.duration)}<br>
         Package: ${escapeHTML(order.package)}<br>
         Amount: ${money(order.amount)}<br>
-        Order date: ${escapeHTML(order.created_at || "")}<br>
-        Payment evidence: ${order.payment_evidence_submitted ? "Submitted for review" : "Not submitted"}<br>
-        ${order.payment_reference ? "Transaction ID: " + escapeHTML(order.payment_reference) + "<br>" : ""}
-        ${order.payment_phone ? "Paid from: " + escapeHTML(order.payment_phone) + "<br>" : ""}
-        ${order.payment_analysis && order.payment_analysis.length ? "<strong>Payment detail checks</strong><br>" + order.payment_analysis.map(item => "• " + escapeHTML(item)).join("<br>") : ""}
+        Order date: ${escapeHTML(order.created_at || "")}
     `;
 
     displayGeneralProgress(
