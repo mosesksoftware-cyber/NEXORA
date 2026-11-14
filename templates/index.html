@@ -452,24 +452,33 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
     </div>
 
     <p style="color:#778198;font-size:13px;line-height:1.6">
-        If you have already paid, enter your tracking code and the phone number used when placing your order.
+        Already paid? Enter your order details and payment evidence here. NEXORA will check the information against its merchant records.
     </p>
 
     <form id="alreadyPaidForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <label>Order Tracking Code</label>
-        <input type="text" name="tracking_code" placeholder="Enter your tracking code" maxlength="50" required>
+        <input type="text" name="tracking_code" placeholder="e.g. MKS-XXXXXXXXXX" maxlength="50" autocomplete="off" required>
 
         <label>Phone Number Receiving Data</label>
         <input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
 
+        <label>Transaction ID</label>
+        <input type="text" name="payment_reference" maxlength="40" placeholder="Enter transaction ID if available" autocomplete="off">
+
+        <label>Or paste the complete payment SMS</label>
+        <textarea name="payment_sms" maxlength="1200" rows="4" placeholder="Paste the payment confirmation SMS here" style="width:100%;padding:13px;border:1px solid #dce1eb;border-radius:10px;background:#fafbfe;resize:vertical;font:14px Arial"></textarea>
+
+        <label>Number you paid from</label>
+        <input type="tel" name="payment_phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
+
         <div class="notice">
-            Your order will be submitted for manual payment verification. Submitting this form does not automatically confirm payment. Never enter your PIN or OTP here.
+            Enter a transaction ID or paste the payment SMS, and provide the number used to make the payment. The checks help identify missing or inconsistent details, but do not prove payment. NEXORA must verify the merchant transaction. Never enter your Mobile Money PIN or OTP.
         </div>
 
         <div id="alreadyPaidMessage"></div>
-        <button type="submit" class="submit-button" id="alreadyPaidSubmit">COMPLETE MY ORDER →</button>
+        <button type="submit" class="submit-button" id="alreadyPaidSubmit">SUBMIT PAYMENT DETAILS →</button>
     </form>
 </div>
 </div>
@@ -491,16 +500,6 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
         <label>Phone Number Receiving Data</label>
         <input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
 
-        <div class="notice" style="margin-top:16px">
-            <strong>Already paid? Add your payment details (optional).</strong><br>
-            Enter the transaction ID or paste the payment SMS. Add the number you paid from so NEXORA can review the details. Do not enter your PIN or OTP.
-        </div>
-        <label>Transaction ID (if available)</label>
-        <input type="text" name="payment_reference" id="trackingPaymentReference" maxlength="40" placeholder="e.g. transaction reference" autocomplete="off">
-        <label>Or paste the complete payment SMS</label>
-        <textarea name="payment_sms" id="trackingPaymentSms" maxlength="1200" rows="4" placeholder="Paste the payment confirmation SMS here" style="width:100%;padding:13px;border:1px solid #dce1eb;border-radius:10px;background:#fafbfe;resize:vertical;font:14px Arial"></textarea>
-        <label>Number you paid from</label>
-        <input type="tel" name="payment_phone" id="trackingPaymentPhone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}">
         <div id="trackingError"></div>
         <button type="submit" class="submit-button" id="trackSubmitButton">TRACK MY ORDER →</button>
     </form>
@@ -852,34 +851,31 @@ $("alreadyPaidForm").addEventListener("submit", async event => {
 
     try {
         const formData = new FormData($("alreadyPaidForm"));
+        const transactionId = String(formData.get("payment_reference") || "").trim();
+        const paymentSms = String(formData.get("payment_sms") || "").trim();
+        const paidFrom = String(formData.get("payment_phone") || "").trim();
 
-        const data = await postForm(
-            "/api/complete-paid-order",
-            formData
-        );
+        if (!transactionId && !paymentSms) {
+            throw new Error("Enter your transaction ID or paste the complete payment SMS.");
+        }
+        if (!paidFrom) {
+            throw new Error("Enter the mobile money number you paid from.");
+        }
 
-        const trackingCode = formData.get("tracking_code").trim().toUpperCase();
-        const phone = formData.get("phone").trim();
+        const data = await postForm("/track", formData);
+        const trackingCode = String(formData.get("tracking_code") || "").trim().toUpperCase();
+        const phone = String(formData.get("phone") || "").trim();
 
-        currentOrder = {
-            ...(currentOrder || {}),
-            tracking_code: trackingCode,
-            phone: phone
-        };
-
+        currentOrder = data.order || null;
         $("trackingCodeInput").value = trackingCode;
         $("trackingForm").elements.namedItem("phone").value = phone;
 
-        $("trackingTitle").textContent = "Order submitted";
-        $("trackingDescription").textContent =
-            "Your order has been submitted for manual payment verification.";
-
-        showTrackingScreen(trackingCode, phone);
+        showTrackingScreen(trackingCode, phone, data.order);
 
     } catch (error) {
         showMessage($("alreadyPaidMessage"), error.message);
         button.disabled = false;
-        button.textContent = "COMPLETE MY ORDER →";
+        button.textContent = "SUBMIT PAYMENT DETAILS →";
     }
 });
 
