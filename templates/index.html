@@ -828,7 +828,12 @@ function openGeneralTracking(event) {
 }
 
 $("trackButton").addEventListener("click", openGeneralTracking);
-$("serviceTrackButton").addEventListener("click", openGeneralTracking);
+// This button is not present in the compact homepage. Keep this optional
+// listener guarded so a missing element cannot stop the rest of the app.
+const serviceTrackButton = $("serviceTrackButton");
+if (serviceTrackButton) {
+    serviceTrackButton.addEventListener("click", openGeneralTracking);
+}
 
 /* GENERAL TRACKING FORM */
 $("trackingForm").addEventListener("submit", async event => {
