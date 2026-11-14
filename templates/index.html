@@ -9,9 +9,7 @@
 <meta name="google-site-verification" content="QVdcEOIgtBCK0zo8enyzULkK8lYvAktt3-m05XwHJMk">
 <meta name="description" content="NEXORA - Your Digital Connection. Order affordable MTN, Airtel and Lyca data bundles in Uganda.">
 
-<!-- NEXORA PWA / ANDROID APP CONFIGURATION -->
 <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-
 <meta name="theme-color" content="#091936">
 <meta name="application-name" content="NEXORA">
 <meta name="mobile-web-app-capable" content="yes">
@@ -21,7 +19,6 @@
 
 <link rel="icon" type="image/png" sizes="192x192"
 href="{{ url_for('static', filename='icons/icon-192.png') }}">
-
 <link rel="apple-touch-icon"
 href="{{ url_for('static', filename='icons/icon-192.png') }}">
 
@@ -73,14 +70,8 @@ button,a {-webkit-tap-highlight-color:transparent}
     line-height:1.6;
     font-size:13px;
 }
-.service-announcement h3 {
-    color:#007b68;
-    margin:0 0 10px;
-    font-size:16px;
-}
-.service-announcement p {
-    margin:8px 0;
-}
+.service-announcement h3 {color:#007b68;margin:0 0 10px;font-size:16px}
+.service-announcement p {margin:8px 0}
 .network-grid {display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .network-card {background:white;border:2px solid transparent;border-radius:16px;padding:18px 5px;text-align:center;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy)}
 .network-card.selected {border-color:var(--blue);background:#eaf0ff}
@@ -141,18 +132,45 @@ input:focus {border-color:var(--blue);box-shadow:0 0 0 3px #2454dc18}
 .loading {text-align:center;color:var(--muted);padding:15px;font-size:13px}
 footer {background:var(--navy);color:white;padding:27px 18px;text-align:center;margin-top:30px}
 footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
-.bottom-nav {position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:grid;grid-template-columns:repeat(3,1fr);background:white;box-shadow:0 -4px 20px #00000012;padding:10px 5px calc(10px + env(safe-area-inset-bottom));z-index:100}
-.bottom-nav a {text-align:center;text-decoration:none;color:#929bad;font-size:11px;font-weight:bold}
+
+/* FOUR-ITEM BOTTOM NAVIGATION */
+.bottom-nav {
+    position:fixed;
+    bottom:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:100%;
+    max-width:520px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    background:white;
+    box-shadow:0 -4px 20px #00000012;
+    padding:10px 5px calc(10px + env(safe-area-inset-bottom));
+    z-index:100;
+}
+.bottom-nav a {
+    text-align:center;
+    text-decoration:none;
+    color:#929bad;
+    font-size:11px;
+    font-weight:bold;
+}
 .bottom-nav a.active {color:var(--blue)}
 .bottom-nav span {display:block;font-size:22px;margin-bottom:4px}
-@media(min-width:700px){.app{box-shadow:0 0 35px #09193612}.hero{padding:40px 30px}.content{padding:25px}}
+
+@media(min-width:700px){
+    .app{box-shadow:0 0 35px #09193612}
+    .hero{padding:40px 30px}
+    .content{padding:25px}
+}
 
 /* FREE NEXORA ASSISTANT */
 .nexora-chat-launcher{position:fixed;right:max(18px,calc((100vw - 520px)/2 + 18px));bottom:88px;z-index:300;border:0;border-radius:50px;background:#091936;color:#fff;padding:14px 18px;font-weight:900;box-shadow:0 7px 24px #09193640;cursor:pointer}
 .nexora-chat-panel{position:fixed;right:max(12px,calc((100vw - 520px)/2 + 12px));bottom:150px;width:min(370px,calc(100vw - 24px));height:min(520px,calc(100dvh - 190px));z-index:301;background:#fff;border-radius:20px;box-shadow:0 12px 45px #09193635;display:none;overflow:hidden;flex-direction:column}
 .nexora-chat-panel.open{display:flex}
 .nexora-chat-head{background:#091936;color:#fff;padding:15px;display:flex;align-items:center;justify-content:space-between}
-.nexora-chat-head strong{font-size:16px}.nexora-chat-head small{display:block;color:#dce5ff;font-size:11px;margin-top:4px}
+.nexora-chat-head strong{font-size:16px}
+.nexora-chat-head small{display:block;color:#dce5ff;font-size:11px;margin-top:4px}
 .nexora-chat-close{border:0;background:#ffffff20;color:#fff;border-radius:50%;width:32px;height:32px;font-size:20px;cursor:pointer}
 .nexora-chat-messages{padding:14px;overflow-y:auto;flex:1;background:#f4f6fb}
 .nexora-chat-msg{max-width:88%;padding:11px 13px;border-radius:14px;margin:8px 0;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -163,7 +181,6 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
 .nexora-chat-form{display:flex;gap:8px;padding:10px 12px;background:#fff;border-top:1px solid #e8ebf2}
 .nexora-chat-form input{min-width:0;flex:1;padding:12px;font-size:14px}
 .nexora-chat-form button{border:0;border-radius:11px;background:#2454dc;color:#fff;font-weight:800;padding:0 15px;cursor:pointer}
-
 </style>
 </head>
 
@@ -189,10 +206,11 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
 
 <div class="service-announcement" role="status" aria-label="NEXORA service announcement">
     <h3>📢 NEXORA SERVICES FULLY RESTORED!</h3>
-   <div class="service-announcement" role="status" aria-label="NEXORA delivery notice">
-    <h3>📦 NEXORA DELIVERY NOTICE</h3>
-    <p><strong>If you have placed an order with us, please wait until the evening to receive your package.</strong></p>
-    <p>Thank you for choosing NEXORA. 💙</p>
+    <div class="service-announcement" role="status" aria-label="NEXORA delivery notice">
+        <h3>📦 NEXORA DELIVERY NOTICE</h3>
+        <p><strong>If you have placed an order with us, please wait until the evening to receive your package.</strong></p>
+        <p>Thank you for choosing NEXORA. 💙</p>
+    </div>
 </div>
 
 <div class="section-heading">
@@ -297,7 +315,9 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
         <label>Network</label>
         <select name="network" required style="width:100%;padding:13px;border:1px solid #ccd3e2;border-radius:8px;margin:8px 0 16px">
             <option value="">Choose network</option>
-            <option value="MTN">MTN</option><option value="Airtel">Airtel</option><option value="Lyca">Lyca</option>
+            <option value="MTN">MTN</option>
+            <option value="Airtel">Airtel</option>
+            <option value="Lyca">Lyca</option>
         </select>
         <label>Phone number holding the airtime</label>
         <input type="tel" name="airtime_phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
@@ -486,11 +506,17 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
 </div>
 </div>
 
-
 <!-- FREE RULE-BASED NEXORA ASSISTANT -->
 <button type="button" class="nexora-chat-launcher" id="nexoraChatLauncher" aria-label="Open NEXORA Assistant">💬 Ask NEXORA</button>
+
 <section class="nexora-chat-panel" id="nexoraChatPanel" aria-label="NEXORA Assistant" aria-hidden="true">
-  <div class="nexora-chat-head"><div><strong>NEXORA Assistant</strong><small>Free help • Built-in answers</small></div><button type="button" class="nexora-chat-close" id="nexoraChatClose" aria-label="Close chat">×</button></div>
+  <div class="nexora-chat-head">
+    <div>
+        <strong>NEXORA Assistant</strong>
+        <small>Free help • Built-in answers</small>
+    </div>
+    <button type="button" class="nexora-chat-close" id="nexoraChatClose" aria-label="Close chat">×</button>
+  </div>
   <div class="nexora-chat-messages" id="nexoraChatMessages" aria-live="polite">
     <div class="nexora-chat-msg bot">Hello! 👋 Welcome to NEXORA. I can help with weekly and monthly bundles, orders, Airtel Money payments, tracking and Airtime to Cash. What would you like help with?</div>
   </div>
@@ -502,13 +528,26 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
     <button type="button" data-chat="paid">Already paid?</button>
     <button type="button" data-chat="airtime">Airtime to Cash</button>
   </div>
-  <form class="nexora-chat-form" id="nexoraChatForm"><input id="nexoraChatInput" type="text" maxlength="300" placeholder="Type your question..." autocomplete="off" aria-label="Type your question" required><button type="submit">Send</button></form>
+  <form class="nexora-chat-form" id="nexoraChatForm">
+    <input id="nexoraChatInput" type="text" maxlength="300" placeholder="Type your question..." autocomplete="off" aria-label="Type your question" required>
+    <button type="submit">Send</button>
+  </form>
 </section>
 
+<!-- UPDATED FOUR-ITEM BOTTOM NAVIGATION -->
 <nav class="bottom-nav">
-    <a href="#home" class="active" id="homeButton"><span>⌂</span>Home</a>
-    <a href="#bundles" id="bundlesButton"><span>▦</span>Bundles</a>
-    <a href="#" id="trackButton"><span>⌕</span>Track</a>
+    <a href="#home" class="active" id="homeButton">
+        <span>⌂</span>Home
+    </a>
+    <a href="#bundles" id="bundlesButton">
+        <span>▦</span>Bundles
+    </a>
+    <a href="#" id="trackButton">
+        <span>⌕</span>Track
+    </a>
+    <a href="mailto:tenorshare45@gmail.com?subject=NEXORA%20Customer%20Enquiry" id="contactButton">
+        <span>✉</span>Contact Us
+    </a>
 </nav>
 
 <script>
@@ -833,9 +872,11 @@ $("serviceAirtimeButton").addEventListener("click", event => {
 $("airtimeForm").addEventListener("submit", async event => {
     event.preventDefault();
     if (!$("airtimeForm").reportValidity()) return;
+
     const button = $("airtimeSubmit");
     button.disabled = true;
     button.textContent = "SUBMITTING...";
+
     try {
         const data = await postForm($("airtimeForm").action, new FormData($("airtimeForm")));
         showMessage($("airtimeMessage"), data.message + " Reference: " + data.reference, "success");
@@ -1111,7 +1152,6 @@ document.addEventListener("keydown", event => {
     if (event.key === "Escape") closeScreens();
 });
 
-
 /* NEXORA ASSISTANT — FREE BUILT-IN HELP, NO API KEY */
 (() => {
     const launcher = document.getElementById("nexoraChatLauncher");
@@ -1120,6 +1160,7 @@ document.addEventListener("keydown", event => {
     const messages = document.getElementById("nexoraChatMessages");
     const form = document.getElementById("nexoraChatForm");
     const input = document.getElementById("nexoraChatInput");
+
     if (!launcher || !panel || !messages || !form || !input) return;
 
     function openChat() {
@@ -1127,10 +1168,12 @@ document.addEventListener("keydown", event => {
         panel.setAttribute("aria-hidden", "false");
         input.focus();
     }
+
     function closeChat() {
         panel.classList.remove("open");
         panel.setAttribute("aria-hidden", "true");
     }
+
     function addMessage(text, who) {
         const bubble = document.createElement("div");
         bubble.className = "nexora-chat-msg " + who;
@@ -1138,40 +1181,57 @@ document.addEventListener("keydown", event => {
         messages.appendChild(bubble);
         messages.scrollTop = messages.scrollHeight;
     }
+
     function answerFor(raw) {
         const q = raw.toLowerCase().replace(/\s+/g, " ").trim();
+
         if (/\b(hi|hello|hey|good morning|good afternoon)\b/.test(q))
             return "Hello! 👋 Welcome to NEXORA. Ask me about weekly or monthly bundle prices, ordering, payments, tracking or Airtime to Cash.";
+
         if (/price|cost|bundle|package|how much|gb|weekly|monthly/.test(q))
             return "Here are the NEXORA bundle prices:\n\nWEEKLY:\n• 12 GB — UGX 9,000\n• 15 GB — UGX 11,000\n• 17.5 GB — UGX 13,000\n• 19 GB — UGX 15,000\n\nMONTHLY:\n• 10 GB — UGX 7,000 (currently unavailable)\n• 15 GB — UGX 10,000\n• 20 GB — UGX 15,000\n• 25 GB — UGX 20,000\n• 30 GB — UGX 25,000\n\nSelect MTN, Airtel or Lyca, then choose Weekly or Monthly to view the packages.";
+
         if (/order|buy|purchase|place/.test(q))
             return "To place an order:\n1. Open Bundles.\n2. Select MTN, Airtel or Lyca.\n3. Choose Weekly or Monthly.\n4. Select an available package.\n5. Enter your name and the phone number receiving data.\n6. Submit and follow the Airtel Money merchant payment instructions. Keep your tracking code.";
+
         if (/pay|payment|airtel money|merchant|ussd|pin|otp/.test(q))
             return "Follow the payment instructions shown after placing your order. Check the NEXORA merchant name and amount carefully before authorising payment. Enter your Mobile Money PIN only in the official USSD prompt on your phone — never on this website and never share your PIN or OTP. Payment is checked before an order is confirmed.";
+
         if (/track|tracking|status|where.*order/.test(q))
             return "To track an order, choose Track at the bottom of the page. Enter your tracking code and the phone number used when ordering. The page will show the latest available order status.";
+
         if (/already paid|paid|payment sent|completed payment/.test(q))
             return "If you have already paid, choose “Already Paid?” under Our Services. Enter your tracking code and the phone number used when placing the order. Submitting the form sends the order for payment verification; it does not instantly confirm payment.";
+
         if (/airtime|cash|convert|payout/.test(q))
             return "NEXORA has an Airtime to Cash request service. Open “Airtime to Cash” under Our Services, select your network, enter the phone number holding the airtime, the airtime amount and the Mobile Money number for payout. Requests are manually reviewed. NEXORA verifies receipt of airtime before confirming any payout amount. There is no guaranteed fixed exchange rate or payout. Never share your PIN or OTP.";
+
         if (/human|agent|contact|support|help/.test(q))
-            return "I’m the automated NEXORA helper. For a case that needs staff review, use the official contact details published by NEXORA. Do not send your PIN or OTP.";
+            return "For direct assistance, contact NEXORA by email at tenorshare45@gmail.com. Tap Contact Us at the bottom of the page to send us an enquiry. Never share your PIN or OTP.";
+
         return "I can help with weekly and monthly bundle prices, placing an order, Airtel Money payment instructions, tracking, Already Paid, and Airtime to Cash. Try one of the quick buttons or ask your question another way.";
     }
+
     function handleQuestion(question) {
         const clean = question.trim();
         if (!clean) return;
         addMessage(clean, "user");
         addMessage(answerFor(clean), "bot");
     }
-    launcher.addEventListener("click", () => panel.classList.contains("open") ? closeChat() : openChat());
+
+    launcher.addEventListener("click", () =>
+        panel.classList.contains("open") ? closeChat() : openChat()
+    );
+
     close.addEventListener("click", closeChat);
+
     form.addEventListener("submit", event => {
         event.preventDefault();
         handleQuestion(input.value);
         input.value = "";
         input.focus();
     });
+
     panel.querySelectorAll("[data-chat]").forEach(button => {
         button.addEventListener("click", () => {
             const topics = {
@@ -1182,12 +1242,15 @@ document.addEventListener("keydown", event => {
                 paid:"I have already paid. What should I do?",
                 airtime:"How does Airtime to Cash work?"
             };
+
             handleQuestion(topics[button.dataset.chat] || button.textContent);
         });
     });
-    document.addEventListener("keydown", event => { if (event.key === "Escape") closeChat(); });
-})();
 
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeChat();
+    });
+})();
 </script>
 </body>
 </html>
