@@ -490,6 +490,17 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
         <input type="text" name="tracking_code" id="trackingCodeInput" placeholder="Enter tracking code" required>
         <label>Phone Number Receiving Data</label>
         <input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
+
+        <div class="notice" style="margin-top:16px">
+            <strong>Already paid? Add your payment details (optional).</strong><br>
+            Enter the transaction ID or paste the payment SMS. Add the number you paid from so NEXORA can review the details. Do not enter your PIN or OTP.
+        </div>
+        <label>Transaction ID (if available)</label>
+        <input type="text" name="payment_reference" id="trackingPaymentReference" maxlength="40" placeholder="e.g. transaction reference" autocomplete="off">
+        <label>Or paste the complete payment SMS</label>
+        <textarea name="payment_sms" id="trackingPaymentSms" maxlength="1200" rows="4" placeholder="Paste the payment confirmation SMS here" style="width:100%;padding:13px;border:1px solid #dce1eb;border-radius:10px;background:#fafbfe;resize:vertical;font:14px Arial"></textarea>
+        <label>Number you paid from</label>
+        <input type="tel" name="payment_phone" id="trackingPaymentPhone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}">
         <div id="trackingError"></div>
         <button type="submit" class="submit-button" id="trackSubmitButton">TRACK MY ORDER →</button>
     </form>
@@ -996,7 +1007,11 @@ function renderTrackingOrder(order) {
         Duration: ${escapeHTML(order.duration)}<br>
         Package: ${escapeHTML(order.package)}<br>
         Amount: ${money(order.amount)}<br>
-        Order date: ${escapeHTML(order.created_at || "")}
+        Order date: ${escapeHTML(order.created_at || "")}<br>
+        Payment evidence: ${order.payment_evidence_submitted ? "Submitted for review" : "Not submitted"}<br>
+        ${order.payment_reference ? "Transaction ID: " + escapeHTML(order.payment_reference) + "<br>" : ""}
+        ${order.payment_phone ? "Paid from: " + escapeHTML(order.payment_phone) + "<br>" : ""}
+        ${order.payment_analysis && order.payment_analysis.length ? "<strong>Payment detail checks</strong><br>" + order.payment_analysis.map(item => "• " + escapeHTML(item)).join("<br>") : ""}
     `;
 
     displayGeneralProgress(
