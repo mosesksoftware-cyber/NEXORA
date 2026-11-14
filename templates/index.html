@@ -43,6 +43,7 @@ button,a {-webkit-tap-highlight-color:transparent}
 .brand {font-size:23px;font-weight:900;letter-spacing:2px}
 .brand span {color:var(--yellow)}
 .menu-tag {font-size:11px;background:#ffffff18;padding:8px 12px;border-radius:20px}
+.account-link {font-size:11px;background:var(--yellow);color:var(--navy);padding:9px 12px;border-radius:20px;text-decoration:none;font-weight:900;white-space:nowrap}
 .hero {background:linear-gradient(135deg,#091936,#2454dc);color:white;padding:28px 22px 35px;border-radius:0 0 28px 28px}
 .hero small {color:#d9e3ff;font-weight:bold;letter-spacing:1px}
 .hero h1 {font-size:31px;line-height:1.2;margin:15px 0 10px}
@@ -171,7 +172,10 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
 
 <header class="topbar" id="home">
     <div class="brand">NEX<span>ORA</span></div>
-    <div class="menu-tag">UGANDA 🇺🇬</div>
+    <div style="display:flex;align-items:center;gap:8px">
+        <div class="menu-tag">UGANDA 🇺🇬</div>
+        <a class="account-link" href="{{ url_for('customer_account') }}">MY ACCOUNT</a>
+    </div>
 </header>
 
 <section class="hero">
@@ -217,6 +221,11 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
         <div class="service-icon">💸</div>
         <h3>Airtime to Cash</h3>
         <p>Request a payout</p>
+    </a>
+    <a href="{{ url_for('customer_account') }}" class="service">
+        <div class="service-icon">🎁</div>
+        <h3>Refer &amp; Earn</h3>
+        <p>Earn UGX 1,000 for each eligible referral</p>
     </a>
 </div>
 
@@ -1102,9 +1111,7 @@ overlays.forEach(overlay => {
 document.addEventListener("keydown", event => {
     if (event.key === "Escape") closeScreens();
 });
-
-
-/* NEXORA ASSISTANT — FREE BUILT-IN HELP, NO API KEY */
+\n\n/* NEXORA ASSISTANT — FREE BUILT-IN HELP, NO API KEY */
 (() => {
     const launcher = document.getElementById("nexoraChatLauncher");
     const panel = document.getElementById("nexoraChatPanel");
