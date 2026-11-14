@@ -22,166 +22,104 @@ href="{{ url_for('static', filename='icons/icon-192.png') }}">
 <link rel="apple-touch-icon"
 href="{{ url_for('static', filename='icons/icon-192.png') }}">
 
+
 <style>
-:root {
-    --navy:#091936;
-    --blue:#2454dc;
-    --yellow:#ffd600;
-    --bg:#f3f5fa;
-    --muted:#778198;
-}
-* {box-sizing:border-box;scroll-behavior:smooth}
-body {margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--navy)}
-body.locked {overflow:hidden}
-button,input {font-family:inherit}
-button,a {-webkit-tap-highlight-color:transparent}
-.app {max-width:520px;min-height:100vh;margin:auto;background:var(--bg);padding-bottom:100px}
-.topbar {background:var(--navy);color:white;padding:20px;display:flex;align-items:center;justify-content:space-between}
-.brand {font-size:23px;font-weight:900;letter-spacing:2px}
-.brand span {color:var(--yellow)}
-.menu-tag {font-size:11px;background:#ffffff18;padding:8px 12px;border-radius:20px}
-.account-link {font-size:11px;background:var(--yellow);color:var(--navy);padding:9px 12px;border-radius:20px;text-decoration:none;font-weight:900;white-space:nowrap}
-.hero {background:linear-gradient(135deg,#091936,#2454dc);color:white;padding:28px 22px 35px;border-radius:0 0 28px 28px}
-.hero small {color:#d9e3ff;font-weight:bold;letter-spacing:1px}
-.hero h1 {font-size:31px;line-height:1.2;margin:15px 0 10px}
-.hero p {color:#dce5ff;line-height:1.6;font-size:14px}
-.hero-button {display:inline-block;margin-top:12px;padding:14px 20px;background:var(--yellow);color:var(--navy);border-radius:12px;font-weight:900;text-decoration:none}
-.content {padding:20px 16px}
-.section-heading {display:flex;justify-content:space-between;align-items:center;gap:10px;margin:24px 0 15px}
-.section-heading h2 {margin:0;font-size:19px}
-.section-heading small {color:var(--muted)}
-.services {display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.service {background:white;padding:17px;border-radius:19px;box-shadow:0 5px 15px #10204408;text-decoration:none;color:var(--navy);min-height:125px}
-.service-icon {font-size:29px;margin-bottom:13px}
-.service h3 {margin:0 0 6px;font-size:16px}
-.service p {margin:0;color:var(--muted);font-size:12px}
-.promo {background:var(--yellow);border-radius:18px;padding:17px;margin-top:20px;display:flex;justify-content:space-between;align-items:center}
-.promo h3 {margin:0 0 5px;font-size:17px}
-.promo p {margin:0;font-size:12px}
-.promo-icon {font-size:35px}
-.service-announcement {
-    background:linear-gradient(135deg,#e8fff7,#d9f5ff);
-    border:1px solid #9adfc9;
-    border-left:5px solid #008f75;
-    color:#123b3b;
-    padding:16px;
-    border-radius:14px;
-    margin:0 0 22px;
-    line-height:1.6;
-    font-size:13px;
-}
-.service-announcement h3 {color:#007b68;margin:0 0 10px;font-size:16px}
-.service-announcement p {margin:8px 0}
-.network-grid {display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.network-card {background:white;border:2px solid transparent;border-radius:16px;padding:18px 5px;text-align:center;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy)}
-.network-card.selected {border-color:var(--blue);background:#eaf0ff}
-.network-logo {width:43px;height:43px;border-radius:13px;margin:0 auto 10px;display:grid;place-items:center;font-weight:900;font-size:13px;color:white}
-.logo-mtn {background:#ffcc00;color:#171717}
-.logo-airtel {background:#e32636}
-.logo-lyca {background:#7434a8}
-.network-card strong {display:block;font-size:13px}
-.network-card small {color:var(--muted);font-size:10px}
-.selection-panel {display:none;margin-top:22px}
-.selection-panel.show {display:block;animation:drop .3s ease}
-@keyframes drop {from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
-.package-heading {background:linear-gradient(135deg,#091936,#2454dc);color:white;padding:17px;border-radius:16px;margin-bottom:14px}
-.package-heading h2 {margin:0 0 6px;font-size:19px}
-.package-heading p {margin:0;color:#dce5ff;font-size:12px}
-.duration-grid,.package-grid {display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.duration-card {border:2px solid transparent;background:white;color:var(--navy);border-radius:16px;padding:20px 10px;font-size:16px;font-weight:900;cursor:pointer}
-.duration-card.selected {border-color:var(--blue);background:#edf2ff}
-.package-card {position:relative;background:white;border:2px solid transparent;padding:17px;border-radius:17px;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy);text-align:left;min-height:105px}
-.package-card.selected {border-color:var(--blue);background:#edf2ff}
-.package-card:disabled {opacity:.45;cursor:not-allowed;background:#f1f3f6;border-color:#d7dce5}
-.package-card .gb {font-size:23px;font-weight:900}
-.package-card .price {margin-top:9px;color:var(--blue);font-weight:900}
-.package-card small {display:block;margin-top:7px;color:var(--muted);font-size:11px}
-.package-card .check {position:absolute;top:12px;right:12px;background:var(--blue);color:white;width:20px;height:20px;border-radius:50%;display:none;text-align:center;line-height:20px}
-.package-card.selected .check {display:block}
-.sheet-overlay {position:fixed;inset:0;background:#0009;z-index:200;display:none;align-items:flex-end;justify-content:center}
-.sheet-overlay.show {display:flex}
-.sheet {width:100%;max-width:520px;max-height:94vh;overflow-y:auto;background:white;border-radius:25px 25px 0 0;padding:12px 21px 30px;animation:slideUp .3s ease}
-@keyframes slideUp {from{transform:translateY(100%)}to{transform:translateY(0)}}
-.sheet-handle {width:45px;height:5px;background:#d8dce5;border-radius:10px;margin:3px auto 20px}
-.sheet-header {display:flex;align-items:center;justify-content:space-between}
-.sheet-header h2 {margin:0;font-size:21px}
-.close-button {border:0;background:#f0f2f6;border-radius:50%;width:37px;height:37px;font-size:20px;cursor:pointer}
-.summary,.reference-box {background:#edf2ff;padding:17px;border-radius:14px;margin:18px 0}
-.summary strong {font-size:20px}
-.summary p {margin:6px 0 0;color:var(--muted);font-size:13px}
-label {display:block;font-size:13px;font-weight:800;margin:17px 0 7px}
-input {width:100%;padding:15px;border:1px solid #dce1eb;border-radius:11px;background:#fafbfe;outline:none;font-size:16px}
-input:focus {border-color:var(--blue);box-shadow:0 0 0 3px #2454dc18}
-.notice {margin-top:16px;background:#fff5d9;padding:13px;border-radius:11px;font-size:12px;line-height:1.6}
-.submit-button,.action-button {display:block;width:100%;border:0;padding:16px;border-radius:12px;margin-top:14px;font-size:14px;font-weight:900;cursor:pointer;text-align:center;text-decoration:none}
-.submit-button {background:var(--yellow);color:var(--navy);margin-top:19px}
-.submit-button:disabled {opacity:.6;cursor:wait}
-.primary {background:var(--yellow);color:var(--navy)}
-.dark {background:var(--navy);color:white}
-.secondary {background:#edf2ff;color:var(--navy)}
-.message {padding:13px;border-radius:10px;margin:12px 0;font-size:13px}
-.error {background:#ffe5e5;color:#a00000}
-.success {background:#e4f8eb;color:#126b35}
-.reference-box {text-align:center}
-.reference-box strong {display:block;font-size:23px;overflow-wrap:anywhere;margin:12px 0}
-.result-card {background:#f5f7fc;border-radius:15px;padding:17px;margin-top:18px;line-height:1.8;font-size:14px}
-.status {padding:13px;background:#fff3d4;color:#805900;border-radius:10px;text-align:center;font-weight:bold;margin:14px 0}
-.progress-step {padding:12px;margin:8px 0;background:#e8edf4;border-radius:8px;font-size:13px}
-.progress-step.current {background:#d8f3df;border:1px solid #278344;font-weight:bold}
-.progress-step.rejected {background:#ffe5e5;color:#a00000}
-.loading {text-align:center;color:var(--muted);padding:15px;font-size:13px}
-footer {background:var(--navy);color:white;padding:27px 18px;text-align:center;margin-top:30px}
-footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
-
-/* FOUR-ITEM BOTTOM NAVIGATION */
-.bottom-nav {
-    position:fixed;
-    bottom:0;
-    left:50%;
-    transform:translateX(-50%);
-    width:100%;
-    max-width:520px;
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    background:white;
-    box-shadow:0 -4px 20px #00000012;
-    padding:10px 5px calc(10px + env(safe-area-inset-bottom));
-    z-index:100;
-}
-.bottom-nav a {
-    text-align:center;
-    text-decoration:none;
-    color:#929bad;
-    font-size:11px;
-    font-weight:bold;
-}
-.bottom-nav a.active {color:var(--blue)}
-.bottom-nav span {display:block;font-size:22px;margin-bottom:4px}
-
-@media(min-width:700px){
-    .app{box-shadow:0 0 35px #09193612}
-    .hero{padding:40px 30px}
-    .content{padding:25px}
-}
-
-/* FREE NEXORA ASSISTANT */
-.nexora-chat-launcher{position:fixed;right:max(18px,calc((100vw - 520px)/2 + 18px));bottom:88px;z-index:300;border:0;border-radius:50px;background:#091936;color:#fff;padding:14px 18px;font-weight:900;box-shadow:0 7px 24px #09193640;cursor:pointer}
-.nexora-chat-panel{position:fixed;right:max(12px,calc((100vw - 520px)/2 + 12px));bottom:150px;width:min(370px,calc(100vw - 24px));height:min(520px,calc(100dvh - 190px));z-index:301;background:#fff;border-radius:20px;box-shadow:0 12px 45px #09193635;display:none;overflow:hidden;flex-direction:column}
-.nexora-chat-panel.open{display:flex}
-.nexora-chat-head{background:#091936;color:#fff;padding:15px;display:flex;align-items:center;justify-content:space-between}
-.nexora-chat-head strong{font-size:16px}
-.nexora-chat-head small{display:block;color:#dce5ff;font-size:11px;margin-top:4px}
-.nexora-chat-close{border:0;background:#ffffff20;color:#fff;border-radius:50%;width:32px;height:32px;font-size:20px;cursor:pointer}
-.nexora-chat-messages{padding:14px;overflow-y:auto;flex:1;background:#f4f6fb}
-.nexora-chat-msg{max-width:88%;padding:11px 13px;border-radius:14px;margin:8px 0;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
-.nexora-chat-msg.bot{background:#fff;color:#10213c;border:1px solid #e7eaf1;border-top-left-radius:4px}
-.nexora-chat-msg.user{background:#2454dc;color:#fff;margin-left:auto;border-top-right-radius:4px}
-.nexora-chat-quick{display:flex;flex-wrap:wrap;gap:7px;padding:10px 12px;border-top:1px solid #e8ebf2;background:#fff}
-.nexora-chat-quick button{border:1px solid #dce3f2;background:#f5f7fc;color:#10213c;border-radius:18px;padding:8px 10px;font-size:11px;font-weight:700;cursor:pointer}
-.nexora-chat-form{display:flex;gap:8px;padding:10px 12px;background:#fff;border-top:1px solid #e8ebf2}
-.nexora-chat-form input{min-width:0;flex:1;padding:12px;font-size:14px}
-.nexora-chat-form button{border:0;border-radius:11px;background:#2454dc;color:#fff;font-weight:800;padding:0 15px;cursor:pointer}
+:root{--navy:#091936;--blue:#2454dc;--yellow:#ffd600;--bg:#f1f3f7;--muted:#778198}
+*{box-sizing:border-box;scroll-behavior:smooth}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--navy)}
+body.locked{overflow:hidden}
+button,input{font-family:inherit}
+button,a{-webkit-tap-highlight-color:transparent}
+.app{max-width:520px;min-height:100vh;margin:auto;background:var(--bg);padding-bottom:82px}
+.topbar{background:#fff;color:var(--navy);padding:13px 17px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:20px;font-weight:900;letter-spacing:1.5px}
+.brand span{color:var(--blue)}
+.menu-tag{font-size:10px;background:#eef2fb;padding:7px 9px;border-radius:18px}
+.account-link{font-size:12px;background:var(--yellow);color:var(--navy);padding:9px 12px;border-radius:20px;text-decoration:none;font-weight:900;white-space:nowrap}
+.hero{background:linear-gradient(120deg,#091936,#2454dc);color:#fff;padding:22px 18px 24px;text-align:center;border-radius:0 0 20px 20px}
+.hero small{color:#d9e3ff;font-weight:bold;letter-spacing:1.4px;font-size:10px}
+.hero h1{font-size:29px;line-height:1.1;margin:8px 0 7px}
+.hero p{color:#dce5ff;line-height:1.35;font-size:12px;margin:0 auto;max-width:330px}
+.hero-button{display:inline-block;margin-top:11px;padding:10px 16px;background:var(--yellow);color:var(--navy);border-radius:10px;font-size:12px;font-weight:900;text-decoration:none}
+.content{padding:13px 13px 18px}
+.section-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:17px 0 10px}
+.section-heading h2{margin:0;font-size:17px}
+.section-heading small{color:var(--muted);font-size:10px}
+.services{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.service{background:linear-gradient(145deg,#091936,#2454dc);padding:15px;border-radius:17px;box-shadow:0 5px 13px #10204418;text-decoration:none;color:#fff;min-height:126px;display:flex;flex-direction:column;justify-content:space-between}
+.service-icon{font-size:25px;margin-bottom:8px}
+.service h3{margin:0 0 4px;font-size:17px;line-height:1.1}
+.service p{margin:0;color:#e0e8ff;font-size:11px}
+.service-announcement{background:#fff8d9;border-left:4px solid var(--yellow);color:var(--navy);padding:10px 12px;border-radius:10px;margin:0 0 12px;line-height:1.4;font-size:11px}
+.service-announcement h3{color:var(--navy);margin:0 0 3px;font-size:12px}
+.service-announcement p{margin:2px 0}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}
+.quick-action{display:block;text-align:center;text-decoration:none;background:#fff8d9;border:2px solid var(--navy);color:var(--navy);padding:12px 7px;border-radius:14px;font-weight:900;font-size:13px}
+.promo{background:linear-gradient(120deg,#20a2d1,#197caf);color:#fff;border-radius:16px;padding:13px 14px;margin-top:13px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.promo h3{margin:0 0 4px;font-size:14px}
+.promo p{margin:0;font-size:11px;line-height:1.35}
+.promo-icon{font-size:25px}
+.more-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.more-card{background:#fff;border-radius:13px;padding:12px;text-decoration:none;color:var(--navy);font-weight:800;font-size:12px;box-shadow:0 3px 10px #10204408}
+.more-card span{display:block;font-size:22px;margin-bottom:5px}
+.network-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.network-card{background:#fff;border:2px solid transparent;border-radius:13px;padding:13px 5px;text-align:center;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy)}
+.network-card.selected{border-color:var(--blue);background:#eaf0ff}
+.network-logo{width:38px;height:38px;border-radius:11px;margin:0 auto 7px;display:grid;place-items:center;font-weight:900;font-size:12px;color:#fff}
+.logo-mtn{background:#ffcc00;color:#171717}.logo-airtel{background:#e32636}.logo-lyca{background:#7434a8}
+.network-card strong{display:block;font-size:12px}.network-card small{color:var(--muted);font-size:10px}
+.selection-panel{display:none;margin-top:16px}.selection-panel.show{display:block;animation:drop .3s ease}
+@keyframes drop{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.package-heading{background:linear-gradient(135deg,#091936,#2454dc);color:#fff;padding:14px;border-radius:13px;margin-bottom:10px}
+.package-heading h2{margin:0 0 4px;font-size:17px}.package-heading p{margin:0;color:#dce5ff;font-size:11px}
+.duration-grid,.package-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.duration-card{border:2px solid transparent;background:#fff;color:var(--navy);border-radius:13px;padding:15px 8px;font-size:14px;font-weight:900;cursor:pointer}
+.duration-card.selected{border-color:var(--blue);background:#edf2ff}
+.package-card{position:relative;background:#fff;border:2px solid transparent;padding:13px;border-radius:14px;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy);text-align:left;min-height:95px}
+.package-card.selected{border-color:var(--blue);background:#edf2ff}.package-card:disabled{opacity:.45;cursor:not-allowed;background:#f1f3f6;border-color:#d7dce5}
+.package-card .gb{font-size:20px;font-weight:900}.package-card .price{margin-top:7px;color:var(--blue);font-weight:900}.package-card small{display:block;margin-top:6px;color:var(--muted);font-size:10px}
+.package-card .check{position:absolute;top:10px;right:10px;background:var(--blue);color:#fff;width:19px;height:19px;border-radius:50%;display:none;text-align:center;line-height:19px}.package-card.selected .check{display:block}
+.sheet-overlay{position:fixed;inset:0;background:#0009;z-index:200;display:none;align-items:flex-end;justify-content:center}
+.sheet-overlay.show{display:flex}.sheet{width:100%;max-width:520px;max-height:94vh;overflow-y:auto;background:#fff;border-radius:22px 22px 0 0;padding:12px 18px 25px;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:45px;height:5px;background:#d8dce5;border-radius:10px;margin:3px auto 16px}
+.sheet-header{display:flex;align-items:center;justify-content:space-between}.sheet-header h2{margin:0;font-size:20px}
+.close-button{border:0;background:#f0f2f6;border-radius:50%;width:36px;height:36px;font-size:20px;cursor:pointer}
+.summary,.reference-box{background:#edf2ff;padding:15px;border-radius:13px;margin:16px 0}
+.summary strong{font-size:19px}.summary p{margin:5px 0 0;color:var(--muted);font-size:12px}
+label{display:block;font-size:12px;font-weight:800;margin:15px 0 6px}
+input{width:100%;padding:13px;border:1px solid #dce1eb;border-radius:10px;background:#fafbfe;outline:none;font-size:16px}
+input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #2454dc18}
+.notice{margin-top:14px;background:#fff5d9;padding:12px;border-radius:10px;font-size:11px;line-height:1.55}
+.submit-button,.action-button{display:block;width:100%;border:0;padding:14px;border-radius:11px;margin-top:12px;font-size:13px;font-weight:900;cursor:pointer;text-align:center;text-decoration:none}
+.submit-button{background:var(--yellow);color:var(--navy);margin-top:17px}.submit-button:disabled{opacity:.6;cursor:wait}
+.primary{background:var(--yellow);color:var(--navy)}.dark{background:var(--navy);color:#fff}.secondary{background:#edf2ff;color:var(--navy)}
+.message{padding:12px;border-radius:10px;margin:11px 0;font-size:12px}.error{background:#ffe5e5;color:#a00000}.success{background:#e4f8eb;color:#126b35}
+.reference-box{text-align:center}.reference-box strong{display:block;font-size:21px;overflow-wrap:anywhere;margin:10px 0}
+.result-card{background:#f5f7fc;border-radius:13px;padding:14px;margin-top:15px;line-height:1.8;font-size:13px}
+.status{padding:12px;background:#fff3d4;color:#805900;border-radius:10px;text-align:center;font-weight:bold;margin:13px 0}
+.progress-step{padding:11px;margin:7px 0;background:#e8edf4;border-radius:8px;font-size:12px}.progress-step.current{background:#d8f3df;border:1px solid #278344;font-weight:bold}.progress-step.rejected{background:#ffe5e5;color:#a00000}
+.loading{text-align:center;color:var(--muted);padding:13px;font-size:12px}
+footer{background:var(--navy);color:#fff;padding:20px 15px;text-align:center;margin-top:18px}
+footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:grid;grid-template-columns:repeat(3,1fr);background:#fff;box-shadow:0 -4px 20px #00000012;padding:8px 5px calc(8px + env(safe-area-inset-bottom));z-index:100}
+.bottom-nav a{text-align:center;text-decoration:none;color:#929bad;font-size:11px;font-weight:bold}
+.bottom-nav a.active{color:var(--blue)}.bottom-nav span{display:block;font-size:21px;margin-bottom:2px}
+.nexora-chat-launcher{position:fixed;right:max(14px,calc((100vw - 520px)/2 + 14px));bottom:75px;z-index:300;border:0;border-radius:50px;background:#091936;color:#fff;padding:11px 14px;font-size:12px;font-weight:900;box-shadow:0 7px 24px #09193640;cursor:pointer}
+.nexora-chat-panel{position:fixed;right:max(10px,calc((100vw - 520px)/2 + 10px));bottom:130px;width:min(370px,calc(100vw - 20px));height:min(500px,calc(100dvh - 160px));z-index:301;background:#fff;border-radius:18px;box-shadow:0 12px 45px #09193635;display:none;overflow:hidden;flex-direction:column}
+.nexora-chat-panel.open{display:flex}.nexora-chat-head{background:#091936;color:#fff;padding:14px;display:flex;align-items:center;justify-content:space-between}
+.nexora-chat-head strong{font-size:15px}.nexora-chat-head small{display:block;color:#dce5ff;font-size:10px;margin-top:3px}
+.nexora-chat-close{border:0;background:#ffffff20;color:#fff;border-radius:50%;width:31px;height:31px;font-size:20px;cursor:pointer}
+.nexora-chat-messages{padding:12px;overflow-y:auto;flex:1;background:#f4f6fb}
+.nexora-chat-msg{max-width:88%;padding:10px 12px;border-radius:13px;margin:7px 0;font-size:12px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.nexora-chat-msg.bot{background:#fff;color:#10213c;border:1px solid #e7eaf1;border-top-left-radius:4px}.nexora-chat-msg.user{background:#2454dc;color:#fff;margin-left:auto;border-top-right-radius:4px}
+.nexora-chat-quick{display:flex;flex-wrap:wrap;gap:6px;padding:9px 10px;border-top:1px solid #e8ebf2;background:#fff}
+.nexora-chat-quick button{border:1px solid #dce3f2;background:#f5f7fc;color:#10213c;border-radius:18px;padding:7px 9px;font-size:10px;font-weight:700;cursor:pointer}
+.nexora-chat-form{display:flex;gap:7px;padding:9px 10px;background:#fff;border-top:1px solid #e8ebf2}
+.nexora-chat-form input{min-width:0;flex:1;padding:11px;font-size:13px}.nexora-chat-form button{border:0;border-radius:10px;background:#2454dc;color:#fff;font-weight:800;padding:0 13px;cursor:pointer}
+@media(min-width:700px){.app{box-shadow:0 0 35px #09193612}.hero{padding:27px 25px}.content{padding:15px 17px 20px}}
 </style>
+
 </head>
 
 <body>
@@ -196,67 +134,62 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
 </header>
 
 <section class="hero">
-    <small>WELCOME TO NEXORA</small>
-    <h1>Your Digital World.<br>One Connection.</h1>
-    <p>Get your favourite data bundles through a simple, secure and convenient ordering experience.</p>
+    <small>WELCOME TO</small>
+    <h1>NEXORA</h1>
+    <p>Your digital world. One connection.</p>
     <a href="#bundles" class="hero-button">Explore Bundles →</a>
 </section>
+
 
 <main class="content">
 
 <div class="service-announcement" role="status" aria-label="NEXORA service announcement">
-    <h3>📢 NEXORA SERVICES FULLY RESTORED!</h3>
-    <div class="service-announcement" role="status" aria-label="NEXORA delivery notice">
-        <h3>📦 NEXORA DELIVERY NOTICE</h3>
-        <p><strong>If you have placed an order with us, please wait until the evening to receive your package.</strong></p>
-        <p>Thank you for choosing NEXORA. 💙</p>
-    </div>
+    <h3>📢 NEXORA SERVICES</h3>
+    <p>Services are available. If you have placed an order, please allow time for delivery. Thank you for choosing NEXORA. 💙</p>
 </div>
 
 <div class="section-heading">
-    <h2>Our Services</h2>
-    <small>Simple & convenient</small>
+    <h2>What would you like to do?</h2>
+    <small>Quick services</small>
 </div>
 
 <div class="services">
     <a href="#bundles" class="service">
         <div class="service-icon">📶</div>
-        <h3>Buy Data</h3>
-        <p>Choose your bundle</p>
-    </a>
-    <a href="#" class="service" id="serviceTrackButton">
-        <div class="service-icon">📦</div>
-        <h3>Track Order</h3>
-        <p>Follow your order</p>
-    </a>
-    <a href="#" class="service" id="servicePaidButton">
-        <div class="service-icon">💳</div>
-        <h3>Already Paid?</h3>
-        <p>Complete your order</p>
+        <div><h3>Buy Data</h3><p>Bundles in minutes</p></div>
     </a>
     <a href="#" class="service" id="serviceAirtimeButton">
-        <div class="service-icon">💸</div>
-        <h3>Airtime to Cash</h3>
-        <p>Request a payout</p>
-    </a>
-    <a href="{{ url_for('customer_account') }}" class="service">
-        <div class="service-icon">🎁</div>
-        <h3>Refer &amp; Earn</h3>
-        <p>Earn UGX 1,000 for each eligible referral</p>
+        <div class="service-icon">💵</div>
+        <div><h3>Convert Airtime to Cash</h3><p>Submit a payout request</p></div>
     </a>
 </div>
 
+<div class="section-heading">
+    <h2>Already paid?</h2>
+</div>
+<div class="quick-actions">
+    <a href="#" class="quick-action" id="servicePaidButton">Complete my order</a>
+    <a href="#" class="quick-action" id="trackButton">Track my order</a>
+</div>
+
 <div class="promo">
-    <div><h3>Great data deals!</h3><p>Choose a package that suits you.</p></div>
+    <div><h3>📲 NEXORA data deals</h3><p>Choose your network and get connected with ease.</p></div>
     <div class="promo-icon">⚡</div>
+</div>
+
+<div class="section-heading">
+    <h2>More options</h2>
+</div>
+<div class="more-grid">
+    <a href="{{ url_for('customer_account') }}" class="more-card"><span>🎁</span>Refer &amp; Earn</a>
+    <a href="mailto:tenorshare45@gmail.com?subject=NEXORA%20Customer%20Enquiry" class="more-card"><span>❓</span>Help &amp; Support</a>
 </div>
 
 <section id="bundles">
     <div class="section-heading">
         <h2>Choose your network</h2>
-        <small>Step 1</small>
+        <small>Buy data</small>
     </div>
-
     <div class="network-grid">
         <button type="button" class="network-card" data-network="MTN">
             <div class="network-logo logo-mtn">MTN</div>
@@ -292,6 +225,7 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
     </div>
 </section>
 </main>
+
 
 <footer>
     <h3>NEXORA</h3>
@@ -535,20 +469,13 @@ footer p {color:#c8d3e9;font-size:12px;line-height:1.7}
 </section>
 
 <!-- UPDATED FOUR-ITEM BOTTOM NAVIGATION -->
+
 <nav class="bottom-nav">
-    <a href="#home" class="active" id="homeButton">
-        <span>⌂</span>Home
-    </a>
-    <a href="#bundles" id="bundlesButton">
-        <span>▦</span>Bundles
-    </a>
-    <a href="#" id="trackButton">
-        <span>⌕</span>Track
-    </a>
-    <a href="mailto:tenorshare45@gmail.com?subject=NEXORA%20Customer%20Enquiry" id="contactButton">
-        <span>✉</span>Contact Us
-    </a>
+    <a href="#home" class="active" id="homeButton"><span>🏠</span>Home</a>
+    <a href="#bundles" id="bundlesButton"><span>📦</span>Bundles</a>
+    <a href="mailto:tenorshare45@gmail.com?subject=NEXORA%20Customer%20Enquiry" id="contactButton"><span>❓</span>Help</a>
 </nav>
+
 
 <script>
 const packages = {
