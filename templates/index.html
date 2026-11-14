@@ -241,6 +241,29 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
 </footer>
 </div>
 
+<!-- BUY DATA NETWORK PICKER -->
+<div class="sheet-overlay" id="networkPickerOverlay">
+<div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+        <h2>Choose your network</h2>
+        <button type="button" class="close-button" id="closeNetworkPicker" aria-label="Close">×</button>
+    </div>
+    <p style="color:#778198;font-size:13px;margin:9px 0 16px">Select your mobile network to continue.</p>
+    <div class="network-grid">
+        <button type="button" class="network-card network-prompt-card" data-network="MTN">
+            <div class="network-logo logo-mtn">MTN</div><strong>MTN</strong><small>Uganda</small>
+        </button>
+        <button type="button" class="network-card network-prompt-card" data-network="Airtel">
+            <div class="network-logo logo-airtel">A</div><strong>Airtel</strong><small>Uganda</small>
+        </button>
+        <button type="button" class="network-card network-prompt-card" data-network="Lyca">
+            <div class="network-logo logo-lyca">LY</div><strong>Lyca</strong><small>Uganda</small>
+        </button>
+    </div>
+</div>
+</div>
+
 <!-- AIRTIME TO CASH REQUEST -->
 <div class="sheet-overlay" id="airtimeOverlay">
 <div class="sheet">
@@ -502,22 +525,32 @@ const packages = {
 
 const $ = id => document.getElementById(id);
 
-/* REVEAL THE BUNDLE FLOW ONLY AFTER BUY DATA IS PRESSED */
+/* BUY DATA OPENS A NETWORK PICKER SHEET INSTEAD OF SCROLLING */
 function openBundles(event) {
     if (event) event.preventDefault();
-
     closeScreens();
-    const section = $("bundles");
-    section.classList.add("open");
     activeNav("bundlesButton");
-
-    requestAnimationFrame(() => {
-        section.scrollIntoView({behavior:"smooth", block:"start"});
-    });
+    showScreen($("networkPickerOverlay"));
 }
 
 document.querySelectorAll('.service[href="#bundles"], .hero-button').forEach(link => {
     link.addEventListener("click", openBundles);
+});
+
+document.querySelectorAll(".network-prompt-card").forEach(button => {
+    button.addEventListener("click", () => {
+        const network = button.dataset.network;
+        closeScreens();
+        $("bundles").classList.add("open");
+        const matchingCard = document.querySelector('.network-card[data-network="' + network + '"]');
+        if (matchingCard) matchingCard.click();
+        requestAnimationFrame(() => {
+            $("durationSection").scrollIntoView({behavior:"smooth", block:"start"});
+        });
+    });
+});
+$("closeNetworkPicker").addEventListener("click", () => {
+    closeScreens();
 });
 
 let selectedNetwork = "";
@@ -530,6 +563,7 @@ let trackingTimer = null;
 let activeTracking = null;
 
 const overlays = [
+    $("networkPickerOverlay"),
     $("orderOverlay"),
     $("confirmationOverlay"),
     $("paymentOverlay"),
