@@ -22,7 +22,6 @@ href="{{ url_for('static', filename='icons/icon-192.png') }}">
 <link rel="apple-touch-icon"
 href="{{ url_for('static', filename='icons/icon-192.png') }}">
 
-
 <style>
 :root{--navy:#091936;--blue:#2454dc;--yellow:#ffd600;--bg:#f1f3f7;--muted:#778198}
 *{box-sizing:border-box;scroll-behavior:smooth}
@@ -70,7 +69,6 @@ button,a{-webkit-tap-highlight-color:transparent}
 .network-card strong{display:block;font-size:12px}.network-card small{color:var(--muted);font-size:10px}
 .selection-panel{display:none;margin-top:16px}.selection-panel.show{display:block;animation:drop .3s ease}
 @keyframes drop{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-/* Bundle area stays hidden until the visitor requests Buy Data. */
 #bundles{display:none;scroll-margin-top:14px}
 #bundles.open{display:block;animation:bundleEnter .42s ease both}
 @keyframes bundleEnter{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
@@ -111,21 +109,168 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:grid;grid-template-columns:repeat(3,1fr);background:#fff;box-shadow:0 -4px 20px #00000012;padding:8px 5px calc(8px + env(safe-area-inset-bottom));z-index:100}
 .bottom-nav a{text-align:center;text-decoration:none;color:#929bad;font-size:11px;font-weight:bold}
 .bottom-nav a.active{color:var(--blue)}.bottom-nav span{display:block;font-size:21px;margin-bottom:2px}
-.nexora-chat-launcher{position:fixed;right:max(14px,calc((100vw - 520px)/2 + 14px));bottom:75px;z-index:300;border:0;border-radius:50px;background:#091936;color:#fff;padding:11px 14px;font-size:12px;font-weight:900;box-shadow:0 7px 24px #09193640;cursor:pointer}
-.nexora-chat-panel{position:fixed;right:max(10px,calc((100vw - 520px)/2 + 10px));bottom:130px;width:min(370px,calc(100vw - 20px));height:min(500px,calc(100dvh - 160px));z-index:301;background:#fff;border-radius:18px;box-shadow:0 12px 45px #09193635;display:none;overflow:hidden;flex-direction:column}
-.nexora-chat-panel.open{display:flex}.nexora-chat-head{background:#091936;color:#fff;padding:14px;display:flex;align-items:center;justify-content:space-between}
-.nexora-chat-head strong{font-size:15px}.nexora-chat-head small{display:block;color:#dce5ff;font-size:10px;margin-top:3px}
-.nexora-chat-close{border:0;background:#ffffff20;color:#fff;border-radius:50%;width:31px;height:31px;font-size:20px;cursor:pointer}
-.nexora-chat-messages{padding:12px;overflow-y:auto;flex:1;background:#f4f6fb}
-.nexora-chat-msg{max-width:88%;padding:10px 12px;border-radius:13px;margin:7px 0;font-size:12px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
-.nexora-chat-msg.bot{background:#fff;color:#10213c;border:1px solid #e7eaf1;border-top-left-radius:4px}.nexora-chat-msg.user{background:#2454dc;color:#fff;margin-left:auto;border-top-right-radius:4px}
-.nexora-chat-quick{display:flex;flex-wrap:wrap;gap:6px;padding:9px 10px;border-top:1px solid #e8ebf2;background:#fff}
-.nexora-chat-quick button{border:1px solid #dce3f2;background:#f5f7fc;color:#10213c;border-radius:18px;padding:7px 9px;font-size:10px;font-weight:700;cursor:pointer}
-.nexora-chat-form{display:flex;gap:7px;padding:9px 10px;background:#fff;border-top:1px solid #e8ebf2}
-.nexora-chat-form input{min-width:0;flex:1;padding:11px;font-size:13px}.nexora-chat-form button{border:0;border-radius:10px;background:#2454dc;color:#fff;font-weight:800;padding:0 13px;cursor:pointer}
-@media(min-width:700px){.app{box-shadow:0 0 35px #09193612}.hero{padding:27px 25px}.content{padding:15px 17px 20px}}
-</style>
 
+/* NEXORA ASSISTANT — BLACK AND YELLOW DESIGN */
+.nexora-chat-launcher{
+    position:fixed;
+    right:max(14px,calc((100vw - 520px)/2 + 14px));
+    bottom:75px;
+    z-index:300;
+    border:2px solid #ffd600;
+    border-radius:50px;
+    background:#080808;
+    color:#ffd600;
+    padding:12px 17px;
+    font-size:12px;
+    font-weight:900;
+    box-shadow:0 7px 24px #0005;
+    cursor:pointer;
+}
+.nexora-chat-launcher:hover{background:#ffd600;color:#080808}
+
+.nexora-chat-panel{
+    position:fixed;
+    right:max(10px,calc((100vw - 520px)/2 + 10px));
+    bottom:130px;
+    width:min(370px,calc(100vw - 20px));
+    height:min(500px,calc(100dvh - 160px));
+    z-index:301;
+    background:#111;
+    border:1px solid #ffd600;
+    border-radius:18px;
+    box-shadow:0 12px 45px #0007;
+    display:none;
+    overflow:hidden;
+    flex-direction:column;
+}
+.nexora-chat-panel.open{display:flex}
+
+.nexora-chat-head{
+    background:#080808;
+    color:#ffd600;
+    padding:15px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:1px solid #ffd600;
+}
+.nexora-chat-head strong{font-size:15px}
+.nexora-chat-head small{display:block;color:#c9c9c9;font-size:10px;margin-top:4px}
+.nexora-chat-close{
+    border:1px solid #ffd600;
+    background:#1a1a1a;
+    color:#ffd600;
+    border-radius:50%;
+    width:32px;
+    height:32px;
+    font-size:20px;
+    cursor:pointer;
+}
+.nexora-chat-messages{
+    padding:13px;
+    overflow-y:auto;
+    flex:1;
+    background:#101010;
+}
+.nexora-chat-msg{
+    max-width:88%;
+    padding:11px 13px;
+    border-radius:13px;
+    margin:8px 0;
+    font-size:12px;
+    line-height:1.5;
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+}
+.nexora-chat-msg.bot{
+    background:#202020;
+    color:#fff;
+    border:1px solid #383838;
+    border-left:3px solid #ffd600;
+    border-top-left-radius:4px;
+}
+.nexora-chat-msg.user{
+    background:#ffd600;
+    color:#080808;
+    margin-left:auto;
+    font-weight:700;
+    border-top-right-radius:4px;
+}
+.nexora-chat-quick{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    padding:10px;
+    border-top:1px solid #333;
+    background:#080808;
+}
+.nexora-chat-quick button{
+    border:1px solid #ffd600;
+    background:#171717;
+    color:#ffd600;
+    border-radius:18px;
+    padding:7px 10px;
+    font-size:10px;
+    font-weight:700;
+    cursor:pointer;
+}
+.nexora-chat-quick button:hover{background:#ffd600;color:#080808}
+.nexora-chat-form{
+    display:flex;
+    gap:7px;
+    padding:10px;
+    background:#080808;
+    border-top:1px solid #333;
+}
+.nexora-chat-form input{
+    min-width:0;
+    flex:1;
+    padding:11px;
+    font-size:13px;
+    color:#fff;
+    background:#202020;
+    border:1px solid #444;
+}
+.nexora-chat-form input:focus{border-color:#ffd600;box-shadow:0 0 0 2px #ffd60022}
+.nexora-chat-form button{
+    border:0;
+    border-radius:10px;
+    background:#ffd600;
+    color:#080808;
+    font-weight:900;
+    padding:0 15px;
+    cursor:pointer;
+}
+.nexora-chat-form button:disabled{opacity:.5;cursor:wait}
+
+/* TYPING ANIMATION */
+.nexora-typing{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    min-width:58px;
+    width:max-content;
+}
+.nexora-typing span{
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#ffd600;
+    animation:nexoraTyping 1s infinite ease-in-out;
+}
+.nexora-typing span:nth-child(2){animation-delay:.15s}
+.nexora-typing span:nth-child(3){animation-delay:.3s}
+@keyframes nexoraTyping{
+    0%,60%,100%{transform:translateY(0);opacity:.45}
+    30%{transform:translateY(-5px);opacity:1}
+}
+
+@media(min-width:700px){
+    .app{box-shadow:0 0 35px #09193612}
+    .hero{padding:27px 25px}
+    .content{padding:15px 17px 20px}
+}
+</style>
 </head>
 
 <body>
@@ -145,7 +290,6 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
     <p>Your digital world. One connection.</p>
     <a href="#bundles" class="hero-button">Explore Bundles →</a>
 </section>
-
 
 <main class="content">
 
@@ -231,7 +375,6 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
     </div>
 </section>
 </main>
-
 
 <footer>
     <h3>NEXORA</h3>
@@ -501,14 +644,14 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
 </div>
 </div>
 
-<!-- FREE RULE-BASED NEXORA ASSISTANT -->
+<!-- NEXORA ASSISTANT -->
 <button type="button" class="nexora-chat-launcher" id="nexoraChatLauncher" aria-label="Open NEXORA Assistant">💬 Ask NEXORA</button>
 
 <section class="nexora-chat-panel" id="nexoraChatPanel" aria-label="NEXORA Assistant" aria-hidden="true">
   <div class="nexora-chat-head">
     <div>
-        <strong>NEXORA Assistant</strong>
-        <small>Free help • Built-in answers</small>
+        <strong>⚡ NEXORA Assistant</strong>
+        <small>Here to help you • Online assistance</small>
     </div>
     <button type="button" class="nexora-chat-close" id="nexoraChatClose" aria-label="Close chat">×</button>
   </div>
@@ -525,18 +668,15 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
   </div>
   <form class="nexora-chat-form" id="nexoraChatForm">
     <input id="nexoraChatInput" type="text" maxlength="300" placeholder="Type your question..." autocomplete="off" aria-label="Type your question" required>
-    <button type="submit">Send</button>
+    <button type="submit" id="nexoraChatSend">Send</button>
   </form>
 </section>
-
-<!-- UPDATED FOUR-ITEM BOTTOM NAVIGATION -->
 
 <nav class="bottom-nav">
     <a href="#home" class="active" id="homeButton"><span>🏠</span>Home</a>
     <a href="#bundles" id="bundlesButton"><span>📦</span>Bundles</a>
     <a href="mailto:tenorshare45@gmail.com?subject=NEXORA%20Customer%20Enquiry" id="contactButton"><span>❓</span>Help</a>
 </nav>
-
 
 <script>
 const packages = {
@@ -557,7 +697,6 @@ const packages = {
 
 const $ = id => document.getElementById(id);
 
-/* ALL BUY-DATA STEPS USE BOTTOM-SHEET PICKERS */
 function openBundles(event) {
     if (event) event.preventDefault();
     closeScreens();
@@ -569,7 +708,6 @@ document.querySelectorAll('.service[href="#bundles"], .hero-button').forEach(lin
     link.addEventListener("click", openBundles);
 });
 
-// Move the existing duration and package interfaces into their own sheets.
 $("durationSection").classList.add("show");
 $("packageSection").classList.add("show");
 $("durationSheetContent").appendChild($("durationSection"));
@@ -1155,21 +1293,24 @@ document.addEventListener("keydown", event => {
     if (event.key === "Escape") closeScreens();
 });
 
-/* NEXORA ASSISTANT — FREE BUILT-IN HELP, NO API KEY */
+/* NEXORA ASSISTANT — BUILT-IN ANSWERS WITH TYPING ANIMATION */
 (() => {
-    const launcher = document.getElementById("nexoraChatLauncher");
-    const panel = document.getElementById("nexoraChatPanel");
-    const close = document.getElementById("nexoraChatClose");
-    const messages = document.getElementById("nexoraChatMessages");
-    const form = document.getElementById("nexoraChatForm");
-    const input = document.getElementById("nexoraChatInput");
+    const launcher = $("nexoraChatLauncher");
+    const panel = $("nexoraChatPanel");
+    const close = $("nexoraChatClose");
+    const messages = $("nexoraChatMessages");
+    const form = $("nexoraChatForm");
+    const input = $("nexoraChatInput");
+    const sendButton = $("nexoraChatSend");
 
-    if (!launcher || !panel || !messages || !form || !input) return;
+    if (!launcher || !panel || !close || !messages || !form || !input || !sendButton) return;
+
+    let isTyping = false;
 
     function openChat() {
         panel.classList.add("open");
         panel.setAttribute("aria-hidden", "false");
-        input.focus();
+        setTimeout(() => input.focus(), 100);
     }
 
     function closeChat() {
@@ -1183,12 +1324,23 @@ document.addEventListener("keydown", event => {
         bubble.textContent = text;
         messages.appendChild(bubble);
         messages.scrollTop = messages.scrollHeight;
+        return bubble;
+    }
+
+    function showTyping() {
+        const typing = document.createElement("div");
+        typing.className = "nexora-chat-msg bot nexora-typing";
+        typing.setAttribute("aria-label", "NEXORA is typing");
+        typing.innerHTML = "<span></span><span></span><span></span>";
+        messages.appendChild(typing);
+        messages.scrollTop = messages.scrollHeight;
+        return typing;
     }
 
     function answerFor(raw) {
         const q = raw.toLowerCase().replace(/\s+/g, " ").trim();
 
-        if (/\b(hi|hello|hey|good morning|good afternoon)\b/.test(q))
+        if (/\b(hi|hello|hey|good morning|good afternoon|good evening)\b/.test(q))
             return "Hello! 👋 Welcome to NEXORA. Ask me about weekly or monthly bundle prices, ordering, payments, tracking or Airtime to Cash.";
 
         if (/price|cost|bundle|package|how much|gb|weekly|monthly/.test(q))
@@ -1201,42 +1353,69 @@ document.addEventListener("keydown", event => {
             return "Follow the payment instructions shown after placing your order. Check the NEXORA merchant name and amount carefully before authorising payment. Enter your Mobile Money PIN only in the official USSD prompt on your phone — never on this website and never share your PIN or OTP. Payment is checked before an order is confirmed.";
 
         if (/track|tracking|status|where.*order/.test(q))
-            return "To track an order, choose Track at the bottom of the page. Enter your tracking code and the phone number used when ordering. The page will show the latest available order status.";
+            return "To track an order, choose Track my order on the home page. Enter your tracking code and the phone number used when ordering. The page will show the latest available order status.";
 
         if (/already paid|paid|payment sent|completed payment/.test(q))
-            return "If you have already paid, choose “Already Paid?” under Our Services. Enter your tracking code and the phone number used when placing the order. Submitting the form sends the order for payment verification; it does not instantly confirm payment.";
+            return "If you have already paid, choose Complete my order on the home page. Enter the phone number used when placing the order, then provide either your payment transaction/reference ID or paste your Airtel Money payment SMS. NEXORA will review the payment evidence. Submitting the form does not instantly confirm payment.";
 
         if (/airtime|cash|convert|payout/.test(q))
-            return "NEXORA has an Airtime to Cash request service. Open “Airtime to Cash” under Our Services, select your network, enter the phone number holding the airtime, the airtime amount and the Mobile Money number for payout. Requests are manually reviewed. NEXORA verifies receipt of airtime before confirming any payout amount. There is no guaranteed fixed exchange rate or payout. Never share your PIN or OTP.";
+            return "NEXORA has an Airtime to Cash request service. Open Convert Airtime to Cash on the home page, select your network, enter the phone number holding the airtime, the airtime amount and the Mobile Money number for payout. Requests are manually reviewed. NEXORA verifies receipt of airtime before confirming any payout amount. There is no guaranteed fixed exchange rate or payout. Never share your PIN or OTP.";
 
         if (/human|agent|contact|support|help/.test(q))
-            return "For direct assistance, contact NEXORA by email at tenorshare45@gmail.com. Tap Contact Us at the bottom of the page to send us an enquiry. Never share your PIN or OTP.";
+            return "For direct assistance, contact NEXORA by email at tenorshare45@gmail.com. Tap Help at the bottom of the page to send an enquiry. Never share your PIN or OTP.";
 
-        return "I can help with weekly and monthly bundle prices, placing an order, Airtel Money payment instructions, tracking, Already Paid, and Airtime to Cash. Try one of the quick buttons or ask your question another way.";
+        return "I can help with weekly and monthly bundle prices, placing an order, Airtel Money payment instructions, tracking, completing an already-paid order, and Airtime to Cash. Try one of the quick buttons or ask your question another way.";
     }
 
     function handleQuestion(question) {
         const clean = question.trim();
-        if (!clean) return;
+        if (!clean || isTyping) return;
+
         addMessage(clean, "user");
-        addMessage(answerFor(clean), "bot");
+
+        const answer = answerFor(clean);
+        const typingBubble = showTyping();
+
+        isTyping = true;
+        input.disabled = true;
+        sendButton.disabled = true;
+        sendButton.textContent = "...";
+
+        const delay = Math.min(2200, Math.max(900, answer.length * 12));
+
+        setTimeout(() => {
+            typingBubble.remove();
+            addMessage(answer, "bot");
+
+            isTyping = false;
+            input.disabled = false;
+            sendButton.disabled = false;
+            sendButton.textContent = "Send";
+            input.focus();
+        }, delay);
     }
 
-    launcher.addEventListener("click", () =>
-        panel.classList.contains("open") ? closeChat() : openChat()
-    );
+    launcher.addEventListener("click", () => {
+        panel.classList.contains("open") ? closeChat() : openChat();
+    });
 
     close.addEventListener("click", closeChat);
 
     form.addEventListener("submit", event => {
         event.preventDefault();
-        handleQuestion(input.value);
+        if (isTyping) return;
+
+        const question = input.value;
+        if (!question.trim()) return;
+
         input.value = "";
-        input.focus();
+        handleQuestion(question);
     });
 
     panel.querySelectorAll("[data-chat]").forEach(button => {
         button.addEventListener("click", () => {
+            if (isTyping) return;
+
             const topics = {
                 prices:"Show me the bundle prices",
                 order:"How do I place an order?",
