@@ -1180,17 +1180,70 @@ document.addEventListener("keydown", event => {
     function closeChat(){panel.classList.remove("open");panel.setAttribute("aria-hidden","true");document.body.classList.remove("locked");}
     function addMessage(text,who){const bubble=document.createElement("div");bubble.className="nexora-chat-msg "+who;bubble.textContent=text;messages.appendChild(bubble);messages.scrollTop=messages.scrollHeight;}
     function showTyping(){const typing=document.createElement("div");typing.className="nexora-typing";typing.id="nexoraTypingIndicator";typing.setAttribute("aria-label","NEXORA is typing");typing.innerHTML="<span></span><span></span><span></span>";messages.appendChild(typing);messages.scrollTop=messages.scrollHeight;}
+    let lastAssistantTopic = "welcome";
     function answerFor(raw){
-        const q=raw.toLowerCase().replace(/\s+/g," ").trim();
-        if(/\b(hi|hello|hey|good morning|good afternoon)\b/.test(q)) return "👋 Hello! Welcome to NEXORA. What would you like help with today?";
-        if(/price|cost|bundle|package|how much|\bgb\b|weekly|monthly/.test(q)) return "Here are the NEXORA bundle prices:\n\nWEEKLY:\n• 12 GB — UGX 9,000\n• 15 GB — UGX 11,000\n• 17.5 GB — UGX 13,000\n• 19 GB — UGX 15,000\n\nMONTHLY:\n• 10 GB — UGX 7,000 (currently unavailable)\n• 15 GB — UGX 10,000\n• 20 GB — UGX 15,000\n• 25 GB — UGX 20,000\n• 30 GB — UGX 25,000\n\nChoose MTN, Airtel or Lyca, then select Weekly or Monthly to view available packages.";
-        if(/order|buy|purchase|place/.test(q)) return "To place an order:\n1. Open Bundles.\n2. Select MTN, Airtel or Lyca.\n3. Choose Weekly or Monthly.\n4. Select an available package.\n5. Enter your name and the phone number receiving data.\n6. Submit and follow the Airtel Money merchant payment instructions. Keep your tracking code.";
-        if(/pay|payment|airtel money|merchant|ussd|pin|otp/.test(q)) return "Follow the payment instructions shown after placing your order. Check the NEXORA merchant name and amount carefully before authorising payment. Enter your Mobile Money PIN only in the official USSD prompt on your phone. Never share your PIN or OTP. Payment is checked before an order is confirmed.";
-        if(/track|tracking|status|where.*order/.test(q)) return "To track an order, choose Track at the bottom of the page. Enter your tracking code and the phone number used when ordering. The page will show the latest available order status.";
-        if(/already paid|paid|payment sent|completed payment/.test(q)) return "If you have already paid, choose Complete my order on the home page. Enter your phone number and either the transaction/reference ID or payment SMS. Your payment will be submitted for verification; it is not instantly confirmed.";
-        if(/airtime|cash|convert|payout/.test(q)) return "NEXORA has an Airtime to Cash request service. Open Airtime to Cash, select your network, enter the phone number holding the airtime, the airtime amount and the Mobile Money number for payout. Requests are manually reviewed. Never share your PIN or OTP.";
-        if(/human|agent|contact|support|help/.test(q)) return "For direct assistance, contact the NEXORA admin by email: tenorshare45@gmail.com.";
-        return "I don't have that information. Please contact the admin directly via email: tenorshare45@gmail.com.";
+        const q=raw.toLowerCase().replace(/[’']/g,"'").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
+        const has=(pattern)=>pattern.test(q);
+
+        // Friendly conversation and short replies
+        if(has(/^(hi|hello|hey|hiya|good morning|good afternoon|good evening)$/)){
+            lastAssistantTopic="welcome";
+            return "👋 Hello! Welcome to NEXORA. I can help you choose a data bundle, place an order, understand payments, track an order or use Airtime to Cash. What would you like to do?";
+        }
+        if(has(/^(yes|yes please|yeah|yep|sure|okay|ok|lets go|let us go|yes lets go|yes let us go|start|continue|go ahead)$/)){
+            lastAssistantTopic="services";
+            return "Great! 🚀 Let's get started. NEXORA offers data bundles and Airtime to Cash. Which service do you need: data bundles, Airtime to Cash, an existing order, or payment help?";
+        }
+        if(has(/^(no|no thanks|not now|maybe later)$/)) return "No problem. You can ask me whenever you are ready. Is there anything else about NEXORA I can explain?";
+        if(has(/^(thanks|thank you|thx|thank you so much)$/)) return "You're welcome! 😊 I'm here if you need help with NEXORA bundles, orders, payments or tracking.";
+        if(has(/^(bye|goodbye|see you|thats all|that is all)$/)) return "Thanks for visiting NEXORA. Have a great day! 👋";
+
+        // General questions about NEXORA and how it works
+        if(has(/\b(who are you|what are you|what is nexora|whats nexora|tell me about nexora|about nexora|what do you do|what can you do|services|service list)\b/)){
+            lastAssistantTopic="services";
+            return "NEXORA is a digital services platform. You can use it to buy data bundles, submit Airtime to Cash requests, and follow up on orders. I can guide you through each service. Which one would you like to know about?";
+        }
+        if(has(/\b(how does it work|how it works|how do you work|how does nexora work|explain nexora|explain how|how can i use nexora|how to use nexora)\b/)){
+            lastAssistantTopic="how";
+            return "Here's how NEXORA works:\n\n1. Choose the service you need: Data Bundles or Airtime to Cash.\n2. Enter the requested details carefully.\n3. For a bundle order, choose your network and an available package, then enter the recipient's phone number.\n4. Follow the payment instructions displayed after submitting the order.\n5. Keep your tracking code so you can check the order status.\n\nSome requests require manual verification. Which step would you like me to explain?";
+        }
+        if(has(/\b(price|prices|cost|bundle|bundles|package|packages|how much|gb|weekly|monthly)\b/)){
+            lastAssistantTopic="prices";
+            return "Here are the NEXORA bundle prices:\n\nWEEKLY:\n• 12 GB — UGX 9,000\n• 15 GB — UGX 11,000\n• 17.5 GB — UGX 13,000\n• 19 GB — UGX 15,000\n\nMONTHLY:\n• 10 GB — UGX 7,000 (currently unavailable)\n• 15 GB — UGX 10,000\n• 20 GB — UGX 15,000\n• 25 GB — UGX 20,000\n• 30 GB — UGX 25,000\n\nChoose MTN, Airtel or Lyca, then select Weekly or Monthly to view available packages.";
+        }
+        if(has(/\b(order|buy|purchase|place an order|how to order|ordering)\b/)){
+            lastAssistantTopic="order";
+            return "To place a NEXORA data order:\n1. Open Bundles.\n2. Select MTN, Airtel or Lyca.\n3. Choose Weekly or Monthly.\n4. Select an available package.\n5. Enter your name and the phone number receiving data.\n6. Submit and follow the payment instructions shown.\n7. Keep your tracking code for checking progress.\n\nWould you like help with package prices or payment?";
+        }
+        if(has(/\b(pay|payment|airtel money|merchant|ussd|pin|otp|how to pay)\b/)){
+            lastAssistantTopic="payment";
+            return "After submitting your order, follow the payment instructions shown on NEXORA. Check the merchant name and amount before authorising. Enter your Mobile Money PIN only in the official USSD prompt on your phone. Never share your PIN or OTP. Payment is checked before an order is confirmed.";
+        }
+        if(has(/\b(track|tracking|status|where is my order|my order|check order)\b/)){
+            lastAssistantTopic="tracking";
+            return "To track an order, choose Track at the bottom of the page. Enter your tracking code and the phone number used when ordering. The page will show the latest available order status.";
+        }
+        if(has(/\b(already paid|i have paid|paid already|payment sent|payment completed|completed payment|confirm my payment)\b/)){
+            lastAssistantTopic="paid";
+            return "If you have already paid, choose Complete my order on the home page. Enter your phone number and either the transaction/reference ID or payment SMS. Your payment will be submitted for verification; it is not instantly confirmed.";
+        }
+        if(has(/\b(airtime|cash|convert|payout)\b/)){
+            lastAssistantTopic="airtime";
+            return "NEXORA has an Airtime to Cash request service. Open Airtime to Cash, select your network, enter the phone number holding the airtime, the airtime amount and the Mobile Money number for payout. Requests are manually reviewed. Never share your PIN or OTP.";
+        }
+        if(has(/\b(network|mtn|airtel|lyca)\b/)){
+            lastAssistantTopic="network";
+            return "NEXORA currently lists MTN, Airtel and Lyca for bundle selection. Choose your network in the Bundles section to see the packages available for it.";
+        }
+        if(has(/\b(human|agent|admin|contact|support|help|email|talk to someone)\b/)){
+            lastAssistantTopic="support";
+            return "For direct assistance, contact the NEXORA admin by email: tenorshare45@gmail.com.";
+        }
+        if(has(/\b(what next|next step|i need help|can you help|help me)\b/)){
+            return "Of course! I can guide you. Are you trying to buy a data bundle, convert airtime to cash, make or confirm a payment, or track an order?";
+        }
+        if(q.split(" ").length<=3 && has(/^(ok|okay|alright|got it|understood)$/)) return "Great! What would you like to do next—view bundles, place an order, check a payment or track an order?";
+        return "I'm not fully sure what you mean yet. Could you rephrase your question or tell me whether it's about bundles, ordering, payments, tracking or Airtime to Cash? If you need a person, contact the admin directly at tenorshare45@gmail.com.";
     }
     function handleQuestion(question){const clean=question.trim();if(!clean)return;addMessage(clean,"user");showTyping();const reply=answerFor(clean);window.setTimeout(()=>{const indicator=document.getElementById("nexoraTypingIndicator");if(indicator)indicator.remove();addMessage(reply,"bot");},850);}
     launcher.addEventListener("click",()=>panel.classList.contains("open")?closeChat():openChat());
