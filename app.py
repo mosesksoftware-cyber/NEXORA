@@ -153,6 +153,11 @@ def init_db():
                 ADD COLUMN payment_reference TEXT
             """,
 
+            "payment_sms": """
+                ALTER TABLE orders
+                ADD COLUMN payment_sms TEXT
+            """,
+
             "payment_verified_at": """
                 ALTER TABLE orders
                 ADD COLUMN payment_verified_at TEXT
@@ -915,24 +920,20 @@ def complete_paid_order():
             "message": "Security token expired. Refresh the page and try again."
         }), 400
 
-    try:
-        order_id = int(request.form.get("order_id", "0"))
-    except (ValueError, TypeError):
-        order_id = 0
-
     phone = request.form.get("phone", "").strip()
+    payment_reference = request.form.get("payment_reference", "").strip()[:100]
+    payment_sms = request.form.get("payment_sms", "").strip()[:2000]
 
-    # Only accept the order currently associated with this session.
-    session_order_id = session.get("customer_order_id")
-
-    if (
-        order_id <= 0
-        or session_order_id != order_id
-        or not valid_uganda_phone(phone)
-    ):
+    if not valid_uganda_phone(phone):
         return jsonify({
             "success": False,
-            "message": "Your order could not be identified. Please return to your payment screen."
+            "message": "Enter the phone number used when placing your order."
+        }), 400
+
+    if not payment_reference and not payment_sms:
+        return jsonify({
+            "success": False,
+            "message": "Enter a transaction/reference ID or paste your payment SMS."
         }), 400
 
     if not AIRTEL_MERCHANT_CODE:
@@ -942,41 +943,41 @@ def complete_paid_order():
         }), 400
 
     with get_db() as conn:
-
+        # Match the customer's phone to their most recent order still awaiting payment.
         record = conn.execute("""
             SELECT id, status, payment_submitted_at
             FROM orders
-            WHERE id = ?
-              AND phone = ?
-        """, (order_id, phone)).fetchone()
+            WHERE phone = ?
+              AND status = 'Awaiting Payment'
+            ORDER BY id DESC
+            LIMIT 1
+        """, (phone,)).fetchone()
 
         if record is None:
             return jsonify({
                 "success": False,
-                "message": "Order not found. Please check your order details."
+                "message": "No unpaid order was found for that phone number. Check the number used when ordering or contact NEXORA support."
             }), 404
-
-        if record["status"] != "Awaiting Payment":
-            return jsonify({
-                "success": False,
-                "message": "This order has already been updated."
-            }), 400
 
         if record["payment_submitted_at"]:
             return jsonify({
                 "success": True,
-                "message": "Your order has already been submitted for payment verification."
+                "message": "Your latest order has already been submitted for payment verification."
             })
 
         cursor = conn.execute("""
             UPDATE orders
-            SET payment_submitted_at = ?
+            SET payment_reference = ?,
+                payment_sms = ?,
+                payment_submitted_at = ?
             WHERE id = ?
               AND status = 'Awaiting Payment'
               AND payment_submitted_at IS NULL
         """, (
+            payment_reference or None,
+            payment_sms or None,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            order_id
+            record["id"]
         ))
 
         if cursor.rowcount != 1:
@@ -987,7 +988,7 @@ def complete_paid_order():
 
     return jsonify({
         "success": True,
-        "message": "Your order has been submitted. NEXORA will verify payment after checking the merchant account."
+        "message": "Your payment details have been submitted with your latest order for manual verification. This does not automatically confirm payment."
     })
 
 
