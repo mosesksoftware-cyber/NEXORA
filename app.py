@@ -20,20 +20,28 @@ from functools import wraps
 
 app = Flask(__name__)
 
-app.secret_key = os.environ.get("MKS_SECRET_KEY")
+# Render may use either the NEXORA-specific names or the standard names.
+# A generated fallback keeps the public website from crashing at startup;
+# set a permanent secret in Render for sessions to survive restarts.
+app.secret_key = (
+    os.environ.get("MKS_SECRET_KEY")
+    or os.environ.get("SECRET_KEY")
+    or secrets.token_hex(32)
+)
 
-ADMIN_USERNAME = os.environ.get("MKS_ADMIN_USERNAME")
-ADMIN_PASSWORD = os.environ.get("MKS_ADMIN_PASSWORD")
+ADMIN_USERNAME = (
+    os.environ.get("MKS_ADMIN_USERNAME")
+    or os.environ.get("ADMIN_USERNAME")
+)
+ADMIN_PASSWORD = (
+    os.environ.get("MKS_ADMIN_PASSWORD")
+    or os.environ.get("ADMIN_PASSWORD")
+)
+ADMIN_CONFIGURED = bool(ADMIN_USERNAME and ADMIN_PASSWORD)
 
 AIRTEL_MERCHANT_CODE = os.environ.get(
     "MKS_AIRTEL_MERCHANT_CODE", ""
 ).strip()
-
-if not app.secret_key:
-    raise RuntimeError("MKS_SECRET_KEY is not configured.")
-
-if not ADMIN_USERNAME or not ADMIN_PASSWORD:
-    raise RuntimeError("Admin credentials are not configured.")
 
 
 DB_NAME = os.path.join(
@@ -1257,15 +1265,20 @@ def admin_login():
         username = request.form.get("username", "")
         password = request.form.get("password", "")
 
-        username_ok = hmac.compare_digest(
-            username,
-            ADMIN_USERNAME
-        )
+        # Never accept a built-in/default admin password. If credentials
+        # are absent, keep the customer site online and deny admin login.
+        username_ok = False
+        password_ok = False
 
-        password_ok = hmac.compare_digest(
-            password,
-            ADMIN_PASSWORD
-        )
+        if ADMIN_CONFIGURED:
+            username_ok = hmac.compare_digest(
+                username,
+                ADMIN_USERNAME
+            )
+            password_ok = hmac.compare_digest(
+                password,
+                ADMIN_PASSWORD
+            )
 
         if username_ok and password_ok:
 
@@ -1277,10 +1290,16 @@ def admin_login():
 
             return redirect(url_for("admin_dashboard"))
 
-        flash(
-            "Incorrect username or password.",
-            "error"
-        )
+        if not ADMIN_CONFIGURED:
+            flash(
+                "Admin login is not configured. Set MKS_ADMIN_USERNAME and MKS_ADMIN_PASSWORD in the hosting environment.",
+                "error"
+            )
+        else:
+            flash(
+                "Incorrect username or password.",
+                "error"
+            )
 
     return render_template("admin_login.html")
 
