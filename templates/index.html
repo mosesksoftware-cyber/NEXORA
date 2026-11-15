@@ -7,7 +7,7 @@
 <title>NEXORA | Digital Services Uganda</title>
 
 <meta name="google-site-verification" content="QVdcEOIgtBCK0zo8enyzULkK8lYvAktt3-m05XwHJMk">
-<meta name="description" content="NEXORA - Your Digital Connection. Order affordable MTN, Airtel and Lyca data bundles in Uganda.">
+<meta name="description" content="NEXORA - Your Digital Connection. Order affordable MTN and Airtel data bundles in Uganda.">
 
 <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 <meta name="theme-color" content="#091936">
@@ -17,17 +17,15 @@
 <meta name="apple-mobile-web-app-title" content="NEXORA">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<link rel="icon" type="image/png" sizes="192x192"
-href="{{ url_for('static', filename='icons/icon-192.png') }}">
-<link rel="apple-touch-icon"
-href="{{ url_for('static', filename='icons/icon-192.png') }}">
+<link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
 
 <style>
 :root{--navy:#091936;--blue:#2454dc;--yellow:#ffd600;--bg:#f1f3f7;--muted:#778198}
 *{box-sizing:border-box;scroll-behavior:smooth}
 body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--navy)}
 body.locked{overflow:hidden}
-button,input{font-family:inherit}
+button,input,textarea,select{font-family:inherit}
 button,a{-webkit-tap-highlight-color:transparent}
 .app{max-width:520px;min-height:100vh;margin:auto;background:var(--bg);padding-bottom:82px}
 .topbar{background:#fff;color:var(--navy);padding:13px 17px;display:flex;align-items:center;justify-content:space-between}
@@ -65,9 +63,15 @@ button,a{-webkit-tap-highlight-color:transparent}
 .network-card{background:#fff;border:2px solid transparent;border-radius:13px;padding:13px 5px;text-align:center;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy)}
 .network-card.selected{border-color:var(--blue);background:#eaf0ff}
 .network-logo{width:38px;height:38px;border-radius:11px;margin:0 auto 7px;display:grid;place-items:center;font-weight:900;font-size:12px;color:#fff}
-.logo-mtn{background:#ffcc00;color:#171717}.logo-airtel{background:#e32636}.logo-lyca{background:#7434a8}
-.network-card strong{display:block;font-size:12px}.network-card small{color:var(--muted);font-size:10px}
-.selection-panel{display:none;margin-top:16px}.selection-panel.show{display:block;animation:drop .3s ease}
+.logo-mtn{background:#ffcc00;color:#171717}
+.logo-airtel{background:#e32636}
+.logo-lyca{background:#7434a8}
+.network-card strong{display:block;font-size:12px}
+.network-card small{color:var(--muted);font-size:10px}
+.lyca-name{text-decoration:line-through;text-decoration-thickness:2px;opacity:.65}
+.network-card.lyca-disabled{opacity:.55;cursor:not-allowed;background:#f1f1f1}
+.selection-panel{display:none;margin-top:16px}
+.selection-panel.show{display:block;animation:drop .3s ease}
 @keyframes drop{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 #bundles{display:none;scroll-margin-top:14px}
 #bundles.open{display:block;animation:bundleEnter .42s ease both}
@@ -75,201 +79,85 @@ button,a{-webkit-tap-highlight-color:transparent}
 .service,.network-card,.duration-card,.package-card,.bottom-nav a{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease,background .22s ease}
 .network-card:active,.duration-card:active,.package-card:active{transform:scale(.97)}
 .package-heading{background:linear-gradient(135deg,#091936,#2454dc);color:#fff;padding:14px;border-radius:13px;margin-bottom:10px}
-.package-heading h2{margin:0 0 4px;font-size:17px}.package-heading p{margin:0;color:#dce5ff;font-size:11px}
+.package-heading h2{margin:0 0 4px;font-size:17px}
+.package-heading p{margin:0;color:#dce5ff;font-size:11px}
 .duration-grid,.package-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .duration-card{border:2px solid transparent;background:#fff;color:var(--navy);border-radius:13px;padding:15px 8px;font-size:14px;font-weight:900;cursor:pointer}
 .duration-card.selected{border-color:var(--blue);background:#edf2ff}
 .package-card{position:relative;background:#fff;border:2px solid transparent;padding:13px;border-radius:14px;cursor:pointer;box-shadow:0 4px 12px #00000008;color:var(--navy);text-align:left;min-height:95px}
-.package-card.selected{border-color:var(--blue);background:#edf2ff}.package-card:disabled{opacity:.45;cursor:not-allowed;background:#f1f3f6;border-color:#d7dce5}
-.package-card .gb{font-size:20px;font-weight:900}.package-card .price{margin-top:7px;color:var(--blue);font-weight:900}.package-card small{display:block;margin-top:6px;color:var(--muted);font-size:10px}
-.package-card .check{position:absolute;top:10px;right:10px;background:var(--blue);color:#fff;width:19px;height:19px;border-radius:50%;display:none;text-align:center;line-height:19px}.package-card.selected .check{display:block}
+.package-card.selected{border-color:var(--blue);background:#edf2ff}
+.package-card:disabled{opacity:.45;cursor:not-allowed;background:#f1f3f6;border-color:#d7dce5}
+.package-card .gb{font-size:20px;font-weight:900}
+.package-card .price{margin-top:7px;color:var(--blue);font-weight:900}
+.package-card small{display:block;margin-top:6px;color:var(--muted);font-size:10px}
+.package-card .check{position:absolute;top:10px;right:10px;background:var(--blue);color:#fff;width:19px;height:19px;border-radius:50%;display:none;text-align:center;line-height:19px}
+.package-card.selected .check{display:block}
 .sheet-overlay{position:fixed;inset:0;background:#0009;z-index:200;display:none;align-items:flex-end;justify-content:center}
-.sheet-overlay.show{display:flex}.sheet{width:100%;max-width:520px;max-height:94vh;overflow-y:auto;background:#fff;border-radius:22px 22px 0 0;padding:12px 18px 25px;animation:slideUp .3s ease}
+.sheet-overlay.show{display:flex}
+.sheet{width:100%;max-width:520px;max-height:94vh;overflow-y:auto;background:#fff;border-radius:22px 22px 0 0;padding:12px 18px 25px;animation:slideUp .3s ease}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .sheet-handle{width:45px;height:5px;background:#d8dce5;border-radius:10px;margin:3px auto 16px}
-.sheet-header{display:flex;align-items:center;justify-content:space-between}.sheet-header h2{margin:0;font-size:20px}
+.sheet-header{display:flex;align-items:center;justify-content:space-between}
+.sheet-header h2{margin:0;font-size:20px}
 .close-button{border:0;background:#f0f2f6;border-radius:50%;width:36px;height:36px;font-size:20px;cursor:pointer}
 .summary,.reference-box{background:#edf2ff;padding:15px;border-radius:13px;margin:16px 0}
-.summary strong{font-size:19px}.summary p{margin:5px 0 0;color:var(--muted);font-size:12px}
+.summary strong{font-size:19px}
+.summary p{margin:5px 0 0;color:var(--muted);font-size:12px}
 label{display:block;font-size:12px;font-weight:800;margin:15px 0 6px}
-input{width:100%;padding:13px;border:1px solid #dce1eb;border-radius:10px;background:#fafbfe;outline:none;font-size:16px}
-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #2454dc18}
+input,textarea{width:100%;padding:13px;border:1px solid #dce1eb;border-radius:10px;background:#fafbfe;outline:none;font-size:16px}
+input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px #2454dc18}
 .notice{margin-top:14px;background:#fff5d9;padding:12px;border-radius:10px;font-size:11px;line-height:1.55}
 .submit-button,.action-button{display:block;width:100%;border:0;padding:14px;border-radius:11px;margin-top:12px;font-size:13px;font-weight:900;cursor:pointer;text-align:center;text-decoration:none}
-.submit-button{background:var(--yellow);color:var(--navy);margin-top:17px}.submit-button:disabled{opacity:.6;cursor:wait}
-.primary{background:var(--yellow);color:var(--navy)}.dark{background:var(--navy);color:#fff}.secondary{background:#edf2ff;color:var(--navy)}
-.message{padding:12px;border-radius:10px;margin:11px 0;font-size:12px}.error{background:#ffe5e5;color:#a00000}.success{background:#e4f8eb;color:#126b35}
-.reference-box{text-align:center}.reference-box strong{display:block;font-size:21px;overflow-wrap:anywhere;margin:10px 0}
+.submit-button{background:var(--yellow);color:var(--navy);margin-top:17px}
+.submit-button:disabled{opacity:.6;cursor:wait}
+.primary{background:var(--yellow);color:var(--navy)}
+.dark{background:var(--navy);color:#fff}
+.secondary{background:#edf2ff;color:var(--navy)}
+.message{padding:12px;border-radius:10px;margin:11px 0;font-size:12px}
+.error{background:#ffe5e5;color:#a00000}
+.success{background:#e4f8eb;color:#126b35}
+.reference-box{text-align:center}
+.reference-box strong{display:block;font-size:21px;overflow-wrap:anywhere;margin:10px 0}
 .result-card{background:#f5f7fc;border-radius:13px;padding:14px;margin-top:15px;line-height:1.8;font-size:13px}
 .status{padding:12px;background:#fff3d4;color:#805900;border-radius:10px;text-align:center;font-weight:bold;margin:13px 0}
-.progress-step{padding:11px;margin:7px 0;background:#e8edf4;border-radius:8px;font-size:12px}.progress-step.current{background:#d8f3df;border:1px solid #278344;font-weight:bold}.progress-step.rejected{background:#ffe5e5;color:#a00000}
+.progress-step{padding:11px;margin:7px 0;background:#e8edf4;border-radius:8px;font-size:12px}
+.progress-step.current{background:#d8f3df;border:1px solid #278344;font-weight:bold}
+.progress-step.rejected{background:#ffe5e5;color:#a00000}
 .loading{text-align:center;color:var(--muted);padding:13px;font-size:12px}
 footer{background:var(--navy);color:#fff;padding:20px 15px;text-align:center;margin-top:18px}
 footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:grid;grid-template-columns:repeat(3,1fr);background:#fff;box-shadow:0 -4px 20px #00000012;padding:8px 5px calc(8px + env(safe-area-inset-bottom));z-index:100}
 .bottom-nav a{text-align:center;text-decoration:none;color:#929bad;font-size:11px;font-weight:bold}
-.bottom-nav a.active{color:var(--blue)}.bottom-nav span{display:block;font-size:21px;margin-bottom:2px}
+.bottom-nav a.active{color:var(--blue)}
+.bottom-nav span{display:block;font-size:21px;margin-bottom:2px}
 
-/* NEXORA ASSISTANT — BLACK AND YELLOW DESIGN */
-.nexora-chat-launcher{
-    position:fixed;
-    right:max(14px,calc((100vw - 520px)/2 + 14px));
-    bottom:75px;
-    z-index:300;
-    border:2px solid #ffd600;
-    border-radius:50px;
-    background:#080808;
-    color:#ffd600;
-    padding:12px 17px;
-    font-size:12px;
-    font-weight:900;
-    box-shadow:0 7px 24px #0005;
-    cursor:pointer;
-}
+/* NEXORA ASSISTANT */
+.nexora-chat-launcher{position:fixed;right:max(14px,calc((100vw - 520px)/2 + 14px));bottom:75px;z-index:300;border:2px solid #ffd600;border-radius:50px;background:#080808;color:#ffd600;padding:12px 17px;font-size:12px;font-weight:900;box-shadow:0 7px 24px #0005;cursor:pointer}
 .nexora-chat-launcher:hover{background:#ffd600;color:#080808}
-
-.nexora-chat-panel{
-    position:fixed;
-    right:max(10px,calc((100vw - 520px)/2 + 10px));
-    bottom:130px;
-    width:min(370px,calc(100vw - 20px));
-    height:min(500px,calc(100dvh - 160px));
-    z-index:301;
-    background:#111;
-    border:1px solid #ffd600;
-    border-radius:18px;
-    box-shadow:0 12px 45px #0007;
-    display:none;
-    overflow:hidden;
-    flex-direction:column;
-}
+.nexora-chat-panel{position:fixed;right:max(10px,calc((100vw - 520px)/2 + 10px));bottom:130px;width:min(370px,calc(100vw - 20px));height:min(500px,calc(100dvh - 160px));z-index:301;background:#111;border:1px solid #ffd600;border-radius:18px;box-shadow:0 12px 45px #0007;display:none;overflow:hidden;flex-direction:column}
 .nexora-chat-panel.open{display:flex}
-
-.nexora-chat-head{
-    background:#080808;
-    color:#ffd600;
-    padding:15px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    border-bottom:1px solid #ffd600;
-}
+.nexora-chat-head{background:#080808;color:#ffd600;padding:15px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffd600}
 .nexora-chat-head strong{font-size:15px}
 .nexora-chat-head small{display:block;color:#c9c9c9;font-size:10px;margin-top:4px}
-.nexora-chat-close{
-    border:1px solid #ffd600;
-    background:#1a1a1a;
-    color:#ffd600;
-    border-radius:50%;
-    width:32px;
-    height:32px;
-    font-size:20px;
-    cursor:pointer;
-}
-.nexora-chat-messages{
-    padding:13px;
-    overflow-y:auto;
-    flex:1;
-    background:#101010;
-}
-.nexora-chat-msg{
-    max-width:88%;
-    padding:11px 13px;
-    border-radius:13px;
-    margin:8px 0;
-    font-size:12px;
-    line-height:1.5;
-    white-space:pre-wrap;
-    overflow-wrap:anywhere;
-}
-.nexora-chat-msg.bot{
-    background:#202020;
-    color:#fff;
-    border:1px solid #383838;
-    border-left:3px solid #ffd600;
-    border-top-left-radius:4px;
-}
-.nexora-chat-msg.user{
-    background:#ffd600;
-    color:#080808;
-    margin-left:auto;
-    font-weight:700;
-    border-top-right-radius:4px;
-}
-.nexora-chat-quick{
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px;
-    padding:10px;
-    border-top:1px solid #333;
-    background:#080808;
-}
-.nexora-chat-quick button{
-    border:1px solid #ffd600;
-    background:#171717;
-    color:#ffd600;
-    border-radius:18px;
-    padding:7px 10px;
-    font-size:10px;
-    font-weight:700;
-    cursor:pointer;
-}
+.nexora-chat-close{border:1px solid #ffd600;background:#1a1a1a;color:#ffd600;border-radius:50%;width:32px;height:32px;font-size:20px;cursor:pointer}
+.nexora-chat-messages{padding:13px;overflow-y:auto;flex:1;background:#101010}
+.nexora-chat-msg{max-width:88%;padding:11px 13px;border-radius:13px;margin:8px 0;font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.nexora-chat-msg.bot{background:#202020;color:#fff;border:1px solid #383838;border-left:3px solid #ffd600;border-top-left-radius:4px}
+.nexora-chat-msg.user{background:#ffd600;color:#080808;margin-left:auto;font-weight:700;border-top-right-radius:4px}
+.nexora-chat-quick{display:flex;flex-wrap:wrap;gap:6px;padding:10px;border-top:1px solid #333;background:#080808}
+.nexora-chat-quick button{border:1px solid #ffd600;background:#171717;color:#ffd600;border-radius:18px;padding:7px 10px;font-size:10px;font-weight:700;cursor:pointer}
 .nexora-chat-quick button:hover{background:#ffd600;color:#080808}
-.nexora-chat-form{
-    display:flex;
-    gap:7px;
-    padding:10px;
-    background:#080808;
-    border-top:1px solid #333;
-}
-.nexora-chat-form input{
-    min-width:0;
-    flex:1;
-    padding:11px;
-    font-size:13px;
-    color:#fff;
-    background:#202020;
-    border:1px solid #444;
-}
+.nexora-chat-form{display:flex;gap:7px;padding:10px;background:#080808;border-top:1px solid #333}
+.nexora-chat-form input{min-width:0;flex:1;padding:11px;font-size:13px;color:#fff;background:#202020;border:1px solid #444}
 .nexora-chat-form input:focus{border-color:#ffd600;box-shadow:0 0 0 2px #ffd60022}
-.nexora-chat-form button{
-    border:0;
-    border-radius:10px;
-    background:#ffd600;
-    color:#080808;
-    font-weight:900;
-    padding:0 15px;
-    cursor:pointer;
-}
+.nexora-chat-form button{border:0;border-radius:10px;background:#ffd600;color:#080808;font-weight:900;padding:0 15px;cursor:pointer}
 .nexora-chat-form button:disabled{opacity:.5;cursor:wait}
-
-/* TYPING ANIMATION */
-.nexora-typing{
-    display:flex;
-    align-items:center;
-    gap:5px;
-    min-width:58px;
-    width:max-content;
-}
-.nexora-typing span{
-    width:7px;
-    height:7px;
-    border-radius:50%;
-    background:#ffd600;
-    animation:nexoraTyping 1s infinite ease-in-out;
-}
+.nexora-typing{display:flex;align-items:center;gap:5px;min-width:58px;width:max-content}
+.nexora-typing span{width:7px;height:7px;border-radius:50%;background:#ffd600;animation:nexoraTyping 1s infinite ease-in-out}
 .nexora-typing span:nth-child(2){animation-delay:.15s}
 .nexora-typing span:nth-child(3){animation-delay:.3s}
-@keyframes nexoraTyping{
-    0%,60%,100%{transform:translateY(0);opacity:.45}
-    30%{transform:translateY(-5px);opacity:1}
-}
-
-@media(min-width:700px){
-    .app{box-shadow:0 0 35px #09193612}
-    .hero{padding:27px 25px}
-    .content{padding:15px 17px 20px}
-}
+@keyframes nexoraTyping{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-5px);opacity:1}}
+@media(min-width:700px){.app{box-shadow:0 0 35px #09193612}.hero{padding:27px 25px}.content{padding:15px 17px 20px}}
 </style>
 </head>
 
@@ -292,16 +180,12 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
 </section>
 
 <main class="content">
-
 <div class="service-announcement" role="status" aria-label="NEXORA service announcement">
     <h3>📢 NEXORA SERVICES</h3>
     <p>Services are available. If you have placed an order, please allow time for delivery. Thank you for choosing NEXORA. 💙</p>
 </div>
 
-<div class="section-heading">
-    <h2>What would you like to do?</h2>
-    <small>Quick services</small>
-</div>
+<div class="section-heading"><h2>What would you like to do?</h2><small>Quick services</small></div>
 
 <div class="services">
     <a href="#bundles" class="service">
@@ -314,9 +198,7 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
     </a>
 </div>
 
-<div class="section-heading">
-    <h2>Already paid?</h2>
-</div>
+<div class="section-heading"><h2>Already paid?</h2></div>
 <div class="quick-actions">
     <a href="#" class="quick-action" id="servicePaidButton">Complete my order</a>
     <a href="#" class="quick-action" id="trackButton">Track my order</a>
@@ -327,40 +209,33 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
     <div class="promo-icon">⚡</div>
 </div>
 
-<div class="section-heading">
-    <h2>More options</h2>
-</div>
+<div class="section-heading"><h2>More options</h2></div>
 <div class="more-grid">
     <a href="{{ url_for('customer_account') }}" class="more-card"><span>🎁</span>Refer &amp; Earn</a>
     <a href="mailto:tenorshare45@gmail.com?subject=NEXORA%20Customer%20Enquiry" class="more-card"><span>❓</span>Help &amp; Support</a>
 </div>
 
 <section id="bundles">
-    <div class="section-heading">
-        <h2>Choose your network</h2>
-        <small>Buy data</small>
-    </div>
+    <div class="section-heading"><h2>Choose your network</h2><small>Buy data</small></div>
     <div class="network-grid">
         <button type="button" class="network-card" data-network="MTN">
-            <div class="network-logo logo-mtn">MTN</div>
-            <strong>MTN</strong><small>Uganda</small>
+            <div class="network-logo logo-mtn">MTN</div><strong>MTN</strong><small>Uganda</small>
         </button>
         <button type="button" class="network-card" data-network="Airtel">
-            <div class="network-logo logo-airtel">A</div>
-            <strong>Airtel</strong><small>Uganda</small>
+            <div class="network-logo logo-airtel">A</div><strong>Airtel</strong><small>Uganda</small>
         </button>
-        <button type="button" class="network-card" data-network="Lyca">
-            <div class="network-logo logo-lyca">LY</div>
-            <strong>Lyca</strong><small>Uganda</small>
+        <button type="button" class="network-card lyca-disabled" data-network="Lyca" aria-disabled="true">
+            <div class="network-logo logo-lyca">LY</div><strong class="lyca-name">Lyca</strong><small>Unavailable</small>
         </button>
     </div>
 
     <div class="selection-panel" id="durationSection">
         <div class="package-heading">
             <h2>Choose Bundle Duration</h2>
-            <p id="durationNetworkLabel">Select Weekly or Monthly.</p>
+            <p id="durationNetworkLabel">Select Daily, Weekly or Monthly.</p>
         </div>
         <div class="duration-grid">
+            <button type="button" class="duration-card" data-duration="Daily">☀️<br><br>DAILY</button>
             <button type="button" class="duration-card" data-duration="Weekly">📅<br><br>WEEKLY</button>
             <button type="button" class="duration-card" data-duration="Monthly">🗓️<br><br>MONTHLY</button>
         </div>
@@ -400,8 +275,8 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
         <button type="button" class="network-card network-prompt-card" data-network="Airtel">
             <div class="network-logo logo-airtel">A</div><strong>Airtel</strong><small>Uganda</small>
         </button>
-        <button type="button" class="network-card network-prompt-card" data-network="Lyca">
-            <div class="network-logo logo-lyca">LY</div><strong>Lyca</strong><small>Uganda</small>
+        <button type="button" class="network-card network-prompt-card lyca-disabled" data-network="Lyca" aria-disabled="true">
+            <div class="network-logo logo-lyca">LY</div><strong class="lyca-name">Lyca</strong><small>Unavailable</small>
         </button>
     </div>
 </div>
@@ -475,31 +350,21 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
         <button type="button" class="close-button" id="closeOrder">×</button>
     </div>
     <p style="color:#778198;font-size:13px">Enter your details to place your order.</p>
-
     <div class="summary">
         <strong id="summaryPackage">10 GB</strong>
         <p id="summaryDetails">Selected bundle</p>
         <p id="summaryPrice">UGX 7,000</p>
     </div>
-
     <form action="{{ url_for('order') }}" method="POST" id="orderForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="network" id="networkInput">
         <input type="hidden" name="duration" id="durationInput">
         <input type="hidden" name="package" id="packageInput">
-
         <label>Customer Name</label>
         <input type="text" name="customer_name" maxlength="80" placeholder="Enter your full name" autocomplete="name" required>
-
         <label>Phone Number Receiving Data</label>
         <input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
-
-        <div class="notice">
-            Payment method: Airtel Money merchant payment only.
-            After placing your order, you will receive payment instructions.
-            Never share your Mobile Money PIN or OTP.
-        </div>
-
+        <div class="notice">Payment method: Airtel Money merchant payment only. After placing your order, you will receive payment instructions. Never share your Mobile Money PIN or OTP.</div>
         <div id="orderError"></div>
         <button type="submit" class="submit-button" id="placeOrderButton">PLACE MY ORDER →</button>
     </form>
@@ -528,9 +393,7 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
         <h2>Complete your payment</h2>
         <button type="button" class="close-button" id="closePayment">×</button>
     </div>
-
     <div class="result-card" id="paymentOrderDetails"></div>
-
     <div class="notice">
         <strong>HOW TO PAY USING AIRTEL MONEY</strong>
         <ol style="line-height:2;padding-left:20px">
@@ -544,24 +407,14 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
         </ol>
         <strong>Security:</strong> Never enter your PIN on this website or share it with anyone.
     </div>
-
     <div class="reference-box">
         <small>NEXORA AIRTEL MONEY MERCHANT CODE</small>
         <strong id="merchantCode">{{ merchant_code or "Merchant code not configured" }}</strong>
         <button type="button" class="action-button secondary" id="copyMerchantCode">COPY MERCHANT CODE</button>
     </div>
-
-    <p style="font-size:13px;line-height:1.6">
-        After making payment, click below to submit your order for verification.
-    </p>
-
-    <button type="button" class="submit-button" id="paymentCompleteButton">
-        I HAVE PAID — COMPLETE MY ORDER
-    </button>
-
-    <p class="notice">
-        Submitting your order does not automatically confirm payment. NEXORA will check the Airtel Money merchant account before confirming it.
-    </p>
+    <p style="font-size:13px;line-height:1.6">After making payment, click below to submit your order for verification.</p>
+    <button type="button" class="submit-button" id="paymentCompleteButton">I HAVE PAID — COMPLETE MY ORDER</button>
+    <p class="notice">Submitting your order does not automatically confirm payment. NEXORA will check the Airtel Money merchant account before confirming it.</p>
 </div>
 </div>
 
@@ -593,27 +446,16 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
         <h2>Complete My Order</h2>
         <button type="button" class="close-button" id="closeAlreadyPaid">×</button>
     </div>
-
-    <p style="color:#778198;font-size:13px;line-height:1.6">
-        Already paid? Enter your order details and payment evidence here. NEXORA will check the information against its merchant records.
-    </p>
-
+    <p style="color:#778198;font-size:13px;line-height:1.6">Already paid? Enter your order details and payment evidence here. NEXORA will check the information against its merchant records.</p>
     <form id="alreadyPaidForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
         <label>Phone Number Receiving Data</label>
         <input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
-
         <label>Payment Transaction / Reference ID (optional)</label>
         <input type="text" name="payment_reference" maxlength="100" placeholder="Enter transaction or reference ID">
-
         <label>Paste Payment SMS (optional)</label>
         <textarea name="payment_sms" rows="4" maxlength="2000" placeholder="Paste the Airtel Money payment confirmation SMS here"></textarea>
-
-        <div class="notice">
-            Enter either the transaction/reference ID or paste the payment SMS. NEXORA will use your phone number and payment details to find your latest unpaid order and submit it for manual verification. Do not include your Mobile Money PIN or OTP.
-        </div>
-
+        <div class="notice">Enter either the transaction/reference ID or paste the payment SMS. NEXORA will use your phone number and payment details to find your latest unpaid order and submit it for manual verification. Do not include your Mobile Money PIN or OTP.</div>
         <div id="alreadyPaidMessage"></div>
         <button type="submit" class="submit-button" id="alreadyPaidSubmit">COMPLETE MY ORDER →</button>
     </form>
@@ -629,14 +471,12 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
         <button type="button" class="close-button" id="closeGeneralTracking">×</button>
     </div>
     <p style="color:#778198;font-size:13px">Enter your tracking code and the phone number used when ordering.</p>
-
     <form action="{{ url_for('track_order') }}" method="POST" id="trackingForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label>Tracking Code</label>
         <input type="text" name="tracking_code" id="trackingCodeInput" placeholder="Enter tracking code" required>
         <label>Phone Number Receiving Data</label>
         <input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
-
         <div id="trackingError"></div>
         <button type="submit" class="submit-button" id="trackSubmitButton">TRACK MY ORDER →</button>
     </form>
@@ -649,14 +489,11 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
 
 <section class="nexora-chat-panel" id="nexoraChatPanel" aria-label="NEXORA Assistant" aria-hidden="true">
   <div class="nexora-chat-head">
-    <div>
-        <strong>⚡ NEXORA Assistant</strong>
-        <small>Here to help you • Online assistance</small>
-    </div>
+    <div><strong>⚡ NEXORA Assistant</strong><small>Here to help you • Online assistance</small></div>
     <button type="button" class="nexora-chat-close" id="nexoraChatClose" aria-label="Close chat">×</button>
   </div>
   <div class="nexora-chat-messages" id="nexoraChatMessages" aria-live="polite">
-    <div class="nexora-chat-msg bot">Hello! 👋 Welcome to NEXORA. I can help with weekly and monthly bundles, orders, Airtel Money payments, tracking and Airtime to Cash. What would you like help with?</div>
+    <div class="nexora-chat-msg bot">Hello! 👋 Welcome to NEXORA. I can help with daily, weekly and monthly bundles, orders, Airtel Money payments, tracking and Airtime to Cash. What would you like help with?</div>
   </div>
   <div class="nexora-chat-quick">
     <button type="button" data-chat="prices">Bundle prices</button>
@@ -679,20 +516,43 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
 </nav>
 
 <script>
+/* NETWORK-SPECIFIC DATA PACKAGES */
 const packages = {
-    Weekly: [
-        {gb:"12 GB",price:9000},
-        {gb:"15 GB",price:11000},
-        {gb:"17.5 GB",price:13000},
-        {gb:"19 GB",price:15000}
-    ],
-    Monthly: [
-        {gb:"10 GB",price:7000,disabled:true},
-        {gb:"15 GB",price:10000},
-        {gb:"20 GB",price:15000},
-        {gb:"25 GB",price:20000},
-        {gb:"30 GB",price:25000}
-    ]
+    MTN: {
+        Daily: [
+            {gb:"6 GB",price:3000}
+        ],
+        Weekly: [
+            {gb:"7 GB",price:4000},
+            {gb:"10 GB",price:7000},
+            {gb:"12.5 GB",price:9000},
+            {gb:"15 GB",price:11000}
+        ],
+        Monthly: [
+            {gb:"10 GB",price:6000},
+            {gb:"12.5 GB",price:8000},
+            {gb:"15 GB",price:11000},
+            {gb:"20 GB",price:15000}
+        ]
+    },
+    Airtel: {
+        Daily: [
+            {gb:"6 GB",price:3000}
+        ],
+        Weekly: [
+            {gb:"7 GB",price:4000},
+            {gb:"9.5 GB",price:6500},
+            {gb:"12 GB",price:8000},
+            {gb:"14 GB",price:10000}
+        ],
+        Monthly: [
+            {gb:"10 GB",price:7000},
+            {gb:"15 GB",price:10000},
+            {gb:"20 GB",price:15000},
+            {gb:"25 GB",price:20000},
+            {gb:"30 GB",price:25000}
+        ]
+    }
 };
 
 const $ = id => document.getElementById(id);
@@ -724,21 +584,15 @@ let selectedDuration = "";
 let selectedPackage = "";
 let selectedPrice = 0;
 let currentOrder = null;
-
 let trackingTimer = null;
 let activeTracking = null;
 
 const overlays = [
-    $("networkPickerOverlay"),
-    $("durationPickerOverlay"),
-    $("packagePickerOverlay"),
-    $("orderOverlay"),
-    $("confirmationOverlay"),
-    $("paymentOverlay"),
-    $("trackingOverlay"),
-    $("generalTrackingOverlay"),
-    $("alreadyPaidOverlay"),
-    $("airtimeOverlay")
+    $("networkPickerOverlay"),$("durationPickerOverlay"),
+    $("packagePickerOverlay"),$("orderOverlay"),
+    $("confirmationOverlay"),$("paymentOverlay"),
+    $("trackingOverlay"),$("generalTrackingOverlay"),
+    $("alreadyPaidOverlay"),$("airtimeOverlay")
 ];
 
 function money(value) {
@@ -751,7 +605,7 @@ function escapeHTML(value) {
     })[c]);
 }
 
-function showMessage(element, message, type="error") {
+function showMessage(element,message,type="error") {
     element.innerHTML = "";
     const div = document.createElement("div");
     div.className = "message " + type;
@@ -777,8 +631,8 @@ function activeNav(id) {
     $(id).classList.add("active");
 }
 
-async function postForm(url, formData) {
-    const response = await fetch(url, {
+async function postForm(url,formData) {
+    const response = await fetch(url,{
         method:"POST",
         body:formData,
         headers:{
@@ -786,19 +640,18 @@ async function postForm(url, formData) {
             "Accept":"application/json"
         }
     });
-
     const data = await response.json();
-
     if (!response.ok || !data.success) {
         throw new Error(data.message || data.error || "The request could not be completed.");
     }
-
     return data;
 }
 
-/* NETWORK SELECTION */
+/* NETWORK SELECTION — LYCA IS NOT SELECTABLE */
 document.querySelectorAll(".network-card").forEach(card => {
-    card.addEventListener("click", () => {
+    card.addEventListener("click",() => {
+        if (card.dataset.network === "Lyca") return;
+
         document.querySelectorAll(".network-card").forEach(x => x.classList.remove("selected"));
         card.classList.add("selected");
 
@@ -819,8 +672,8 @@ document.querySelectorAll(".network-card").forEach(card => {
 
 /* DURATION SELECTION */
 document.querySelectorAll(".duration-card").forEach(card => {
-    card.addEventListener("click", () => {
-        if (!selectedNetwork) return;
+    card.addEventListener("click",() => {
+        if (!selectedNetwork || !packages[selectedNetwork]) return;
 
         document.querySelectorAll(".duration-card").forEach(x => x.classList.remove("selected"));
         card.classList.add("selected");
@@ -836,28 +689,36 @@ document.querySelectorAll(".duration-card").forEach(card => {
     });
 });
 
-/* DISPLAY PACKAGES */
+/* DISPLAY THE CORRECT NETWORK-SPECIFIC PACKAGES */
 function displayPackages() {
     $("packageGrid").innerHTML = "";
 
-    (packages[selectedDuration] || []).forEach(item => {
+    const networkPackages = packages[selectedNetwork];
+    const availablePackages = networkPackages
+        ? networkPackages[selectedDuration] || []
+        : [];
+
+    availablePackages.forEach(item => {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "package-card";
         button.dataset.package = item.gb;
         button.dataset.price = item.price;
-        button.disabled = Boolean(item.disabled);
 
         button.innerHTML = `
             <span class="check">✓</span>
             <div class="gb">${escapeHTML(item.gb)}</div>
             <div class="price">${money(item.price)}</div>
-            <small>${item.disabled ? "Currently unavailable" : escapeHTML(selectedDuration) + " bundle"}</small>
+            <small>${escapeHTML(selectedDuration)} bundle</small>
         `;
 
-        button.addEventListener("click", () => selectPackage(button));
+        button.addEventListener("click",() => selectPackage(button));
         $("packageGrid").appendChild(button);
     });
+
+    if (!availablePackages.length) {
+        $("packageGrid").textContent = "No packages are currently available.";
+    }
 }
 
 /* SELECT PACKAGE */
@@ -881,9 +742,8 @@ function selectPackage(card) {
 }
 
 /* PLACE ORDER */
-$("orderForm").addEventListener("submit", async event => {
+$("orderForm").addEventListener("submit",async event => {
     event.preventDefault();
-
     if (!$("orderForm").reportValidity()) return;
 
     const button = $("placeOrderButton");
@@ -891,20 +751,12 @@ $("orderForm").addEventListener("submit", async event => {
     button.textContent = "PROCESSING...";
 
     try {
-        const data = await postForm(
-            $("orderForm").action,
-            new FormData($("orderForm"))
-        );
-
+        const data = await postForm($("orderForm").action,new FormData($("orderForm")));
         currentOrder = data.order || data;
-
-        $("confirmationTracking").textContent =
-            currentOrder.tracking_code || data.tracking_code || "";
-
+        $("confirmationTracking").textContent = currentOrder.tracking_code || data.tracking_code || "";
         showScreen($("confirmationOverlay"));
-
     } catch (error) {
-        showMessage($("orderError"), error.message);
+        showMessage($("orderError"),error.message);
     } finally {
         button.disabled = false;
         button.textContent = "PLACE MY ORDER →";
@@ -912,7 +764,7 @@ $("orderForm").addEventListener("submit", async event => {
 });
 
 /* CONTINUE TO PAYMENT */
-$("continuePaymentButton").addEventListener("click", () => {
+$("continuePaymentButton").addEventListener("click",() => {
     if (!currentOrder) return;
 
     $("paymentOrderDetails").innerHTML = `
@@ -922,21 +774,17 @@ $("continuePaymentButton").addEventListener("click", () => {
         Package: ${escapeHTML(currentOrder.package)}<br>
         Amount: <strong>${money(currentOrder.amount)}</strong>
     `;
-
     $("paymentAmount").textContent = money(currentOrder.amount);
-
     showScreen($("paymentOverlay"));
 });
 
 /* COPY MERCHANT CODE */
-$("copyMerchantCode").addEventListener("click", async () => {
+$("copyMerchantCode").addEventListener("click",async () => {
     const code = $("merchantCode").textContent.trim();
-
     if (!code || code === "Merchant code not configured") {
         alert("Merchant code is not configured. Please contact NEXORA.");
         return;
     }
-
     try {
         await navigator.clipboard.writeText(code);
         $("copyMerchantCode").textContent = "COPIED!";
@@ -946,7 +794,7 @@ $("copyMerchantCode").addEventListener("click", async () => {
 });
 
 /* COMPLETE FROM PAYMENT SCREEN */
-$("paymentCompleteButton").addEventListener("click", () => {
+$("paymentCompleteButton").addEventListener("click",() => {
     $("alreadyPaidForm").reset();
     $("alreadyPaidMessage").innerHTML = "";
     if (currentOrder && currentOrder.phone) {
@@ -955,8 +803,8 @@ $("paymentCompleteButton").addEventListener("click", () => {
     showScreen($("alreadyPaidOverlay"));
 });
 
-/* ALREADY PAID SERVICE — AVAILABLE DIRECTLY FROM HOME */
-$("servicePaidButton").addEventListener("click", event => {
+/* ALREADY PAID SERVICE */
+$("servicePaidButton").addEventListener("click",event => {
     event.preventDefault();
     $("alreadyPaidForm").reset();
     $("alreadyPaidMessage").innerHTML = "";
@@ -967,15 +815,15 @@ $("servicePaidButton").addEventListener("click", event => {
 });
 
 /* COMPLETE MY ORDER */
-$("alreadyPaidForm").addEventListener("submit", async event => {
+$("alreadyPaidForm").addEventListener("submit",async event => {
     event.preventDefault();
-
     if (!$("alreadyPaidForm").reportValidity()) return;
 
     const reference = $("alreadyPaidForm").elements.namedItem("payment_reference").value.trim();
     const sms = $("alreadyPaidForm").elements.namedItem("payment_sms").value.trim();
+
     if (!reference && !sms) {
-        showMessage($("alreadyPaidMessage"), "Enter a transaction/reference ID or paste your payment SMS.");
+        showMessage($("alreadyPaidMessage"),"Enter a transaction/reference ID or paste your payment SMS.");
         return;
     }
 
@@ -985,27 +833,25 @@ $("alreadyPaidForm").addEventListener("submit", async event => {
 
     try {
         const formData = new FormData($("alreadyPaidForm"));
-        const data = await postForm("/api/complete-paid-order", formData);
-
-        showMessage($("alreadyPaidMessage"), data.message, "success");
+        const data = await postForm("/api/complete-paid-order",formData);
+        showMessage($("alreadyPaidMessage"),data.message,"success");
         button.textContent = "SUBMITTED ✓";
-
     } catch (error) {
-        showMessage($("alreadyPaidMessage"), error.message);
+        showMessage($("alreadyPaidMessage"),error.message);
         button.disabled = false;
         button.textContent = "COMPLETE MY ORDER →";
     }
 });
 
 /* AIRTIME TO CASH */
-$("serviceAirtimeButton").addEventListener("click", event => {
+$("serviceAirtimeButton").addEventListener("click",event => {
     event.preventDefault();
     $("airtimeForm").reset();
     $("airtimeMessage").innerHTML = "";
     showScreen($("airtimeOverlay"));
 });
 
-$("airtimeForm").addEventListener("submit", async event => {
+$("airtimeForm").addEventListener("submit",async event => {
     event.preventDefault();
     if (!$("airtimeForm").reportValidity()) return;
 
@@ -1014,11 +860,11 @@ $("airtimeForm").addEventListener("submit", async event => {
     button.textContent = "SUBMITTING...";
 
     try {
-        const data = await postForm($("airtimeForm").action, new FormData($("airtimeForm")));
-        showMessage($("airtimeMessage"), data.message + " Reference: " + data.reference, "success");
+        const data = await postForm($("airtimeForm").action,new FormData($("airtimeForm")));
+        showMessage($("airtimeMessage"),data.message + " Reference: " + data.reference,"success");
         $("airtimeForm").reset();
     } catch (error) {
-        showMessage($("airtimeMessage"), error.message);
+        showMessage($("airtimeMessage"),error.message);
     } finally {
         button.disabled = false;
         button.textContent = "SUBMIT AIRTIME REQUEST →";
@@ -1028,24 +874,19 @@ $("airtimeForm").addEventListener("submit", async event => {
 /* GENERAL TRACKING */
 function openGeneralTracking(event) {
     if (event) event.preventDefault();
-
     $("trackingError").innerHTML = "";
     $("generalTrackingResult").innerHTML = "";
-
     showScreen($("generalTrackingOverlay"));
     activeNav("trackButton");
 }
+$("trackButton").addEventListener("click",openGeneralTracking);
 
-$("trackButton").addEventListener("click", openGeneralTracking);
 const serviceTrackButton = $("serviceTrackButton");
-if (serviceTrackButton) {
-    serviceTrackButton.addEventListener("click", openGeneralTracking);
-}
+if (serviceTrackButton) serviceTrackButton.addEventListener("click",openGeneralTracking);
 
 /* GENERAL TRACKING FORM */
-$("trackingForm").addEventListener("submit", async event => {
+$("trackingForm").addEventListener("submit",async event => {
     event.preventDefault();
-
     if (!$("trackingForm").reportValidity()) return;
 
     const button = $("trackSubmitButton");
@@ -1054,26 +895,15 @@ $("trackingForm").addEventListener("submit", async event => {
 
     try {
         const formData = new FormData($("trackingForm"));
-
-        const data = await postForm(
-            $("trackingForm").action,
-            formData
-        );
-
+        const data = await postForm($("trackingForm").action,formData);
         const order = data.order;
 
         $("trackingTitle").textContent = "Your order details";
-        $("trackingDescription").textContent =
-            "Your order status is checked automatically every 5 seconds.";
+        $("trackingDescription").textContent = "Your order status is checked automatically every 5 seconds.";
 
-        showTrackingScreen(
-            order.tracking_code,
-            formData.get("phone").trim(),
-            order
-        );
-
+        showTrackingScreen(order.tracking_code,formData.get("phone").trim(),order);
     } catch (error) {
-        showMessage($("trackingError"), error.message);
+        showMessage($("trackingError"),error.message);
     } finally {
         button.disabled = false;
         button.textContent = "TRACK MY ORDER →";
@@ -1081,15 +911,9 @@ $("trackingForm").addEventListener("submit", async event => {
 });
 
 /* DISPLAY ORDER PROGRESS */
-function displayGeneralProgress(status, container) {
+function displayGeneralProgress(status,container) {
     container.innerHTML = "";
-
-    const steps = [
-        "Awaiting Payment",
-        "Payment Verified",
-        "Sent to Supplier",
-        "Completed"
-    ];
+    const steps = ["Awaiting Payment","Payment Verified","Sent to Supplier","Completed"];
 
     if (status === "Rejected") {
         const div = document.createElement("div");
@@ -1100,7 +924,6 @@ function displayGeneralProgress(status, container) {
     }
 
     const current = steps.indexOf(status);
-
     steps.forEach((step,index) => {
         const div = document.createElement("div");
         div.className = "progress-step" + (current >= index ? " current" : "");
@@ -1111,8 +934,7 @@ function displayGeneralProgress(status, container) {
 
 /* RENDER TRACKING DETAILS */
 function renderTrackingOrder(order) {
-    $("paymentStatus").textContent =
-        "CURRENT STATUS: " + order.status.toUpperCase();
+    $("paymentStatus").textContent = "CURRENT STATUS: " + order.status.toUpperCase();
 
     $("trackingDetails").innerHTML = `
         <strong>Order information</strong><br>
@@ -1128,104 +950,78 @@ function renderTrackingOrder(order) {
         ${order.payment_analysis && order.payment_analysis.length ? "<strong>Payment detail checks</strong><br>" + order.payment_analysis.map(item => "• " + escapeHTML(item)).join("<br>") : ""}
     `;
 
-    displayGeneralProgress(
-        order.status,
-        $("trackingProgress")
-    );
+    displayGeneralProgress(order.status,$("trackingProgress"));
 
     if (order.status === "Completed") {
         $("trackingTitle").textContent = "Order completed!";
-        $("trackingDescription").textContent =
-            "Your order has been marked as completed.";
+        $("trackingDescription").textContent = "Your order has been marked as completed.";
     } else if (order.status === "Rejected") {
         $("trackingTitle").textContent = "Order update";
-        $("trackingDescription").textContent =
-            "Please contact NEXORA for assistance.";
+        $("trackingDescription").textContent = "Please contact NEXORA for assistance.";
     } else {
         $("trackingTitle").textContent = "Order tracking";
-        $("trackingDescription").textContent =
-            "Your order status is checked automatically every 5 seconds.";
+        $("trackingDescription").textContent = "Your order status is checked automatically every 5 seconds.";
     }
 }
 
-/* CHECK STATUS THROUGH THE EXISTING FLASK /track ROUTE */
+/* CHECK STATUS THROUGH FLASK */
 async function checkTrackingStatus() {
     if (!activeTracking) return;
 
     const formData = new FormData();
-    formData.append("tracking_code", activeTracking.trackingCode);
-    formData.append("phone", activeTracking.phone);
+    formData.append("tracking_code",activeTracking.trackingCode);
+    formData.append("phone",activeTracking.phone);
 
     try {
-        const data = await postForm("/track", formData);
-
+        const data = await postForm("/track",formData);
         if (data.success && data.order) {
             renderTrackingOrder(data.order);
-
-            $("refreshMessage").textContent =
-                "Last checked: " + new Date().toLocaleTimeString();
+            $("refreshMessage").textContent = "Last checked: " + new Date().toLocaleTimeString();
         }
     } catch (error) {
-        $("refreshMessage").textContent =
-            "Unable to refresh right now. Retrying automatically.";
+        $("refreshMessage").textContent = "Unable to refresh right now. Retrying automatically.";
     }
 }
 
-/* START AUTOMATIC REFRESH */
-function startAutoTracking(trackingCode, phone) {
+function startAutoTracking(trackingCode,phone) {
     stopAutoTracking();
-
-    activeTracking = {
-        trackingCode: trackingCode,
-        phone: phone
-    };
-
+    activeTracking = {trackingCode:trackingCode,phone:phone};
     checkTrackingStatus();
 
     trackingTimer = setInterval(() => {
-        if ($("trackingOverlay").classList.contains("show")) {
-            checkTrackingStatus();
-        }
-    }, 5000);
+        if ($("trackingOverlay").classList.contains("show")) checkTrackingStatus();
+    },5000);
 }
 
-/* STOP AUTOMATIC REFRESH */
 function stopAutoTracking() {
     if (trackingTimer) {
         clearInterval(trackingTimer);
         trackingTimer = null;
     }
-
     activeTracking = null;
 }
 
-/* OPEN TRACKING SCREEN */
-function showTrackingScreen(trackingCode, phone, initialOrder = null) {
+function showTrackingScreen(trackingCode,phone,initialOrder=null) {
     showScreen($("trackingOverlay"));
 
     if (initialOrder) {
         renderTrackingOrder(initialOrder);
     } else {
-        $("trackingDetails").textContent =
-            "Loading your order information...";
+        $("trackingDetails").textContent = "Loading your order information...";
         $("trackingProgress").innerHTML = "";
         $("paymentStatus").textContent = "CHECKING ORDER STATUS";
     }
 
-    $("refreshMessage").textContent =
-        "Checking order status every 5 seconds.";
-
-    startAutoTracking(trackingCode, phone);
+    $("refreshMessage").textContent = "Checking order status every 5 seconds.";
+    startAutoTracking(trackingCode,phone);
 }
 
 /* MANUAL STATUS CHECK */
-$("refreshStatusButton").addEventListener("click", async () => {
+$("refreshStatusButton").addEventListener("click",async () => {
     if (!activeTracking) {
-        $("refreshMessage").textContent =
-            "Please enter your tracking code and phone number first.";
+        $("refreshMessage").textContent = "Please enter your tracking code and phone number first.";
         return;
     }
-
     $("refreshMessage").textContent = "Checking order status...";
     await checkTrackingStatus();
 });
@@ -1233,7 +1029,6 @@ $("refreshStatusButton").addEventListener("click", async () => {
 /* HOME */
 function resetHome(event) {
     if (event) event.preventDefault();
-
     closeScreens();
 
     selectedNetwork = "";
@@ -1264,36 +1059,27 @@ function resetHome(event) {
     window.scrollTo({top:0,behavior:"smooth"});
 }
 
-$("homeButton").addEventListener("click", resetHome);
-$("trackingHomeButton").addEventListener("click", resetHome);
-
-$("bundlesButton").addEventListener("click", openBundles);
+$("homeButton").addEventListener("click",resetHome);
+$("trackingHomeButton").addEventListener("click",resetHome);
+$("bundlesButton").addEventListener("click",openBundles);
 
 /* CLOSE BUTTONS */
-[
-    "closeOrder",
-    "closePayment",
-    "closeTracking",
-    "closeGeneralTracking",
-    "closeAlreadyPaid",
-    "closeAirtime"
-].forEach(id => {
-    $(id).addEventListener("click", closeScreens);
+["closeOrder","closePayment","closeTracking","closeGeneralTracking","closeAlreadyPaid","closeAirtime"].forEach(id => {
+    $(id).addEventListener("click",closeScreens);
 });
 
 /* CLICK OUTSIDE TO CLOSE */
 overlays.forEach(overlay => {
-    overlay.addEventListener("click", event => {
+    overlay.addEventListener("click",event => {
         if (event.target === overlay) closeScreens();
     });
 });
 
-/* ESCAPE KEY */
-document.addEventListener("keydown", event => {
+document.addEventListener("keydown",event => {
     if (event.key === "Escape") closeScreens();
 });
 
-/* NEXORA ASSISTANT — BUILT-IN ANSWERS WITH TYPING ANIMATION */
+/* NEXORA ASSISTANT */
 (() => {
     const launcher = $("nexoraChatLauncher");
     const panel = $("nexoraChatPanel");
@@ -1309,16 +1095,16 @@ document.addEventListener("keydown", event => {
 
     function openChat() {
         panel.classList.add("open");
-        panel.setAttribute("aria-hidden", "false");
-        setTimeout(() => input.focus(), 100);
+        panel.setAttribute("aria-hidden","false");
+        setTimeout(() => input.focus(),100);
     }
 
     function closeChat() {
         panel.classList.remove("open");
-        panel.setAttribute("aria-hidden", "true");
+        panel.setAttribute("aria-hidden","true");
     }
 
-    function addMessage(text, who) {
+    function addMessage(text,who) {
         const bubble = document.createElement("div");
         bubble.className = "nexora-chat-msg " + who;
         bubble.textContent = text;
@@ -1330,7 +1116,7 @@ document.addEventListener("keydown", event => {
     function showTyping() {
         const typing = document.createElement("div");
         typing.className = "nexora-chat-msg bot nexora-typing";
-        typing.setAttribute("aria-label", "NEXORA is typing");
+        typing.setAttribute("aria-label","NEXORA is typing");
         typing.innerHTML = "<span></span><span></span><span></span>";
         messages.appendChild(typing);
         messages.scrollTop = messages.scrollHeight;
@@ -1338,16 +1124,23 @@ document.addEventListener("keydown", event => {
     }
 
     function answerFor(raw) {
-        const q = raw.toLowerCase().replace(/\s+/g, " ").trim();
+        const q = raw.toLowerCase().replace(/\s+/g," ").trim();
 
         if (/\b(hi|hello|hey|good morning|good afternoon|good evening)\b/.test(q))
-            return "Hello! 👋 Welcome to NEXORA. Ask me about weekly or monthly bundle prices, ordering, payments, tracking or Airtime to Cash.";
+            return "Hello! 👋 Welcome to NEXORA. Ask me about daily, weekly or monthly bundle prices, ordering, payments, tracking or Airtime to Cash.";
 
-        if (/price|cost|bundle|package|how much|gb|weekly|monthly/.test(q))
-            return "Here are the NEXORA bundle prices:\n\nWEEKLY:\n• 12 GB — UGX 9,000\n• 15 GB — UGX 11,000\n• 17.5 GB — UGX 13,000\n• 19 GB — UGX 15,000\n\nMONTHLY:\n• 10 GB — UGX 7,000 (currently unavailable)\n• 15 GB — UGX 10,000\n• 20 GB — UGX 15,000\n• 25 GB — UGX 20,000\n• 30 GB — UGX 25,000\n\nSelect MTN, Airtel or Lyca, then choose Weekly or Monthly to view the packages.";
+        if (/price|cost|bundle|package|how much|gb|weekly|monthly|daily/.test(q))
+            return "NEXORA DATA PACKAGES 🇺🇬\n\n" +
+            "MTN DAILY:\n6 GB — UGX 3,000\n\n" +
+            "AIRTEL DAILY:\n6 GB — UGX 3,000\n\n" +
+            "MTN WEEKLY:\n7 GB — UGX 4,000\n10 GB — UGX 7,000\n12.5 GB — UGX 9,000\n15 GB — UGX 11,000\n\n" +
+            "AIRTEL WEEKLY:\n7 GB — UGX 4,000\n9.5 GB — UGX 6,500\n12 GB — UGX 8,000\n14 GB — UGX 10,000\n\n" +
+            "MTN MONTHLY:\n10 GB — UGX 6,000\n12.5 GB — UGX 8,000\n15 GB — UGX 11,000\n20 GB — UGX 15,000\n\n" +
+            "AIRTEL MONTHLY:\n10 GB — UGX 7,000\n15 GB — UGX 10,000\n20 GB — UGX 15,000\n25 GB — UGX 20,000\n30 GB — UGX 25,000\n\n" +
+            "LYCA: Unavailable.";
 
         if (/order|buy|purchase|place/.test(q))
-            return "To place an order:\n1. Open Bundles.\n2. Select MTN, Airtel or Lyca.\n3. Choose Weekly or Monthly.\n4. Select an available package.\n5. Enter your name and the phone number receiving data.\n6. Submit and follow the Airtel Money merchant payment instructions. Keep your tracking code.";
+            return "To place an order:\n1. Open Bundles.\n2. Select MTN or Airtel.\n3. Choose Daily, Weekly or Monthly.\n4. Select an available package.\n5. Enter your name and the phone number receiving data.\n6. Submit and follow the Airtel Money merchant payment instructions. Keep your tracking code.";
 
         if (/pay|payment|airtel money|merchant|ussd|pin|otp/.test(q))
             return "Follow the payment instructions shown after placing your order. Check the NEXORA merchant name and amount carefully before authorising payment. Enter your Mobile Money PIN only in the official USSD prompt on your phone — never on this website and never share your PIN or OTP. Payment is checked before an order is confirmed.";
@@ -1364,14 +1157,40 @@ document.addEventListener("keydown", event => {
         if (/human|agent|contact|support|help/.test(q))
             return "For direct assistance, contact NEXORA by email at tenorshare45@gmail.com. Tap Help at the bottom of the page to send an enquiry. Never share your PIN or OTP.";
 
-        return "I can help with weekly and monthly bundle prices, placing an order, Airtel Money payment instructions, tracking, completing an already-paid order, and Airtime to Cash. Try one of the quick buttons or ask your question another way.";
+        return null;
+    }
+
+    function addUnknownAnswer() {
+        const bubble = document.createElement("div");
+        bubble.className = "nexora-chat-msg bot";
+
+        bubble.appendChild(document.createTextNode(
+            "Sorry, I'm having a moment! 😂 Please email NEXORA directly FOR INSTANT HELP."
+        ));
+
+        const emailButton = document.createElement("a");
+        emailButton.href = "mailto:tenorshare45@gmail.com?subject=NEXORA%20-%20Instant%20Help";
+        emailButton.textContent = "📧 EMAIL NEXORA FOR INSTANT HELP";
+        emailButton.style.display = "block";
+        emailButton.style.marginTop = "10px";
+        emailButton.style.padding = "10px";
+        emailButton.style.background = "#ffd600";
+        emailButton.style.color = "#080808";
+        emailButton.style.fontWeight = "900";
+        emailButton.style.textAlign = "center";
+        emailButton.style.textDecoration = "none";
+        emailButton.style.borderRadius = "9px";
+
+        bubble.appendChild(emailButton);
+        messages.appendChild(bubble);
+        messages.scrollTop = messages.scrollHeight;
     }
 
     function handleQuestion(question) {
         const clean = question.trim();
         if (!clean || isTyping) return;
 
-        addMessage(clean, "user");
+        addMessage(clean,"user");
 
         const answer = answerFor(clean);
         const typingBubble = showTyping();
@@ -1381,27 +1200,32 @@ document.addEventListener("keydown", event => {
         sendButton.disabled = true;
         sendButton.textContent = "...";
 
-        const delay = Math.min(2200, Math.max(900, answer.length * 12));
+        const delay = Math.min(2200,Math.max(900,(answer || "unknown").length * 12));
 
         setTimeout(() => {
             typingBubble.remove();
-            addMessage(answer, "bot");
+
+            if (answer === null) {
+                addUnknownAnswer();
+            } else {
+                addMessage(answer,"bot");
+            }
 
             isTyping = false;
             input.disabled = false;
             sendButton.disabled = false;
             sendButton.textContent = "Send";
             input.focus();
-        }, delay);
+        },delay);
     }
 
-    launcher.addEventListener("click", () => {
+    launcher.addEventListener("click",() => {
         panel.classList.contains("open") ? closeChat() : openChat();
     });
 
-    close.addEventListener("click", closeChat);
+    close.addEventListener("click",closeChat);
 
-    form.addEventListener("submit", event => {
+    form.addEventListener("submit",event => {
         event.preventDefault();
         if (isTyping) return;
 
@@ -1413,7 +1237,7 @@ document.addEventListener("keydown", event => {
     });
 
     panel.querySelectorAll("[data-chat]").forEach(button => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click",() => {
             if (isTyping) return;
 
             const topics = {
@@ -1429,7 +1253,7 @@ document.addEventListener("keydown", event => {
         });
     });
 
-    document.addEventListener("keydown", event => {
+    document.addEventListener("keydown",event => {
         if (event.key === "Escape") closeChat();
     });
 })();
