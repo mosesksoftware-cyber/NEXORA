@@ -12,6 +12,7 @@ import re
 
 from datetime import datetime
 from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 # ==================================================
@@ -20,28 +21,20 @@ from functools import wraps
 
 app = Flask(__name__)
 
-# Render may use either the NEXORA-specific names or the standard names.
-# A generated fallback keeps the public website from crashing at startup;
-# set a permanent secret in Render for sessions to survive restarts.
-app.secret_key = (
-    os.environ.get("MKS_SECRET_KEY")
-    or os.environ.get("SECRET_KEY")
-    or secrets.token_hex(32)
-)
+app.secret_key = os.environ.get("MKS_SECRET_KEY")
 
-ADMIN_USERNAME = (
-    os.environ.get("MKS_ADMIN_USERNAME")
-    or os.environ.get("ADMIN_USERNAME")
-)
-ADMIN_PASSWORD = (
-    os.environ.get("MKS_ADMIN_PASSWORD")
-    or os.environ.get("ADMIN_PASSWORD")
-)
-ADMIN_CONFIGURED = bool(ADMIN_USERNAME and ADMIN_PASSWORD)
+ADMIN_USERNAME = os.environ.get("MKS_ADMIN_USERNAME")
+ADMIN_PASSWORD = os.environ.get("MKS_ADMIN_PASSWORD")
 
 AIRTEL_MERCHANT_CODE = os.environ.get(
     "MKS_AIRTEL_MERCHANT_CODE", ""
 ).strip()
+
+if not app.secret_key:
+    raise RuntimeError("MKS_SECRET_KEY is not configured.")
+
+if not ADMIN_USERNAME or not ADMIN_PASSWORD:
+    raise RuntimeError("Admin credentials are not configured.")
 
 
 DB_NAME = os.path.join(
@@ -51,14 +44,11 @@ DB_NAME = os.path.join(
 
 
 # ==================================================
-# PACKAGES — MATCHES THE CURRENT index.html
+# PACKAGES
 # ==================================================
 
 NETWORKS = ["MTN", "Airtel", "Lyca"]
-DATA_NETWORKS = ["MTN", "Airtel", "Lyca"]
 
-# The browser displays the same weekly/monthly catalogue for each network.
-# Prices are selected on the server, never trusted from browser-submitted values.
 PACKAGES_BY_DURATION = {
     "Weekly": [
         {"gb": "12 GB", "price": 9000},
@@ -66,21 +56,14 @@ PACKAGES_BY_DURATION = {
         {"gb": "17.5 GB", "price": 13000},
         {"gb": "19 GB", "price": 15000}
     ],
+
     "Monthly": [
-        {"gb": "10 GB", "price": 7000, "disabled": True},
+        # 10 GB at UGX 7,000 is disabled.
         {"gb": "15 GB", "price": 10000},
         {"gb": "20 GB", "price": 15000},
         {"gb": "25 GB", "price": 20000},
         {"gb": "30 GB", "price": 25000}
     ]
-}
-
-PACKAGES_BY_NETWORK = {
-    network: {
-        duration: [dict(package) for package in package_list]
-        for duration, package_list in PACKAGES_BY_DURATION.items()
-    }
-    for network in DATA_NETWORKS
 }
 
 PACKAGES = PACKAGES_BY_DURATION["Monthly"]
@@ -170,6 +153,11 @@ def init_db():
                 ADD COLUMN payment_reference TEXT
             """,
 
+            "payment_sms": """
+                ALTER TABLE orders
+                ADD COLUMN payment_sms TEXT
+            """,
+
             "payment_verified_at": """
                 ALTER TABLE orders
                 ADD COLUMN payment_verified_at TEXT
@@ -190,14 +178,9 @@ def init_db():
                 ADD COLUMN payment_submitted_at TEXT
             """,
 
-            "payment_sms": """
+            "customer_id": """
                 ALTER TABLE orders
-                ADD COLUMN payment_sms TEXT
-            """,
-
-            "payment_phone": """
-                ALTER TABLE orders
-                ADD COLUMN payment_phone TEXT
+                ADD COLUMN customer_id INTEGER
             """
         }
 
@@ -231,6 +214,51 @@ def init_db():
         """)
 
         conn.execute("""
+            CREATE TABLE IF NOT EXISTS customers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                password_hash TEXT NOT NULL,
+                referral_code TEXT NOT NULL UNIQUE,
+                referred_by INTEGER,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (referred_by) REFERENCES customers(id)
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS referral_rewards (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                referrer_id INTEGER NOT NULL,
+                referred_customer_id INTEGER NOT NULL UNIQUE,
+                order_id INTEGER NOT NULL UNIQUE,
+                amount INTEGER NOT NULL DEFAULT 1000,
+                status TEXT NOT NULL DEFAULT 'Available',
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (referrer_id) REFERENCES customers(id),
+                FOREIGN KEY (referred_customer_id) REFERENCES customers(id),
+                FOREIGN KEY (order_id) REFERENCES orders(id)
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS withdrawal_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id INTEGER NOT NULL,
+                amount INTEGER NOT NULL,
+                payout_phone TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'Pending',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (customer_id) REFERENCES customers(id)
+            )
+        """)
+
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_customers_referral_code ON customers(referral_code)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_referral_rewards_referrer ON referral_rewards(referrer_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_withdrawals_customer ON withdrawal_requests(customer_id)")
+
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS airtime_requests (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 reference TEXT NOT NULL UNIQUE,
@@ -244,6 +272,31 @@ def init_db():
                 updated_at TEXT NOT NULL
             )
         """)
+
+
+# ==================================================
+# CUSTOMER ACCOUNT AND REFERRAL HELPERS
+# ==================================================
+
+REFERRAL_REWARD_AMOUNT = 1000
+
+def make_referral_code():
+    return "NX" + secrets.token_hex(4).upper()
+
+def current_customer():
+    customer_id = session.get("customer_id")
+    if not customer_id:
+        return None
+    with get_db() as conn:
+        return conn.execute("SELECT id, name, email, referral_code, created_at FROM customers WHERE id = ?", (customer_id,)).fetchone()
+
+def customer_required(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        if not session.get("customer_id"):
+            return redirect(url_for("customer_login", next=request.path))
+        return function(*args, **kwargs)
+    return wrapper
 
 
 # ==================================================
@@ -317,47 +370,146 @@ def is_ajax_request():
 @app.route("/")
 def home():
 
+    referral_code = request.args.get("ref", "").strip().upper()
+    if referral_code:
+        with get_db() as conn:
+            valid_referrer = conn.execute("SELECT id FROM customers WHERE referral_code = ?", (referral_code,)).fetchone()
+        if valid_referrer:
+            session["pending_referral_code"] = referral_code
+
     return render_template(
         "index.html",
         packages=PACKAGES,
         networks=NETWORKS,
-        data_networks=DATA_NETWORKS,
         packages_by_duration=PACKAGES_BY_DURATION,
-        packages_by_network=PACKAGES_BY_NETWORK,
         merchant_code=AIRTEL_MERCHANT_CODE
     )
 
 
 # ==================================================
-# CUSTOMER ACCOUNT
+# CUSTOMER REGISTRATION, LOGIN, REFERRALS AND WALLET
 # ==================================================
 
-@app.route("/account")
-def customer_account():
+@app.route("/register", methods=["GET", "POST"])
+def customer_register():
+    if request.method == "POST":
+        check_csrf()
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        if not name or len(name) > 80:
+            flash("Enter a valid name.", "error")
+        elif not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+            flash("Enter a valid email address.", "error")
+        elif len(password) < 8:
+            flash("Password must be at least 8 characters.", "error")
+        else:
+            referral_code = session.get("pending_referral_code", "")
+            with get_db() as conn:
+                referrer = conn.execute("SELECT id FROM customers WHERE referral_code = ?", (referral_code,)).fetchone() if referral_code else None
+                try:
+                    code = make_referral_code()
+                    while conn.execute("SELECT 1 FROM customers WHERE referral_code = ?", (code,)).fetchone():
+                        code = make_referral_code()
+                    cur = conn.execute("""INSERT INTO customers (name,email,password_hash,referral_code,referred_by,created_at) VALUES (?,?,?,?,?,?)""", (name,email,generate_password_hash(password),code,referrer["id"] if referrer else None,datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                    session.clear()
+                    session["customer_id"] = cur.lastrowid
+                    session["csrf_token"] = secrets.token_urlsafe(32)
+                    flash("Account created successfully.", "success")
+                    return redirect(url_for("customer_account"))
+                except sqlite3.IntegrityError:
+                    flash("An account with that email already exists.", "error")
+    return render_template_string(ACCOUNT_AUTH_TEMPLATE, page_title="Create NEXORA Account", action=url_for("customer_register"), show_name=True)
 
-    return render_template_string("""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>My Account | NEXORA</title>
-        <style>
-            body { font-family: Arial, sans-serif; background: #f1f3f7; color: #091936; padding: 20px; }
-            .card { max-width: 450px; margin: 50px auto; padding: 25px; background: white; border-radius: 15px; }
-            a { display: block; padding: 14px; background: #2454dc; color: white; text-decoration: none; text-align: center; border-radius: 9px; }
-        </style>
-    </head>
-    <body>
-        <div class="card">
-            <h2>NEXORA — My Account</h2>
-            <p>Customer account and referral services are not currently available.</p>
-            <p>You can still order data bundles and track your orders.</p>
-            <a href="/">RETURN TO NEXORA</a>
-        </div>
-    </body>
-    </html>
-    """)
+@app.route("/login", methods=["GET", "POST"])
+def customer_login():
+    if request.method == "POST":
+        check_csrf()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        with get_db() as conn:
+            customer = conn.execute("SELECT * FROM customers WHERE email = ? COLLATE NOCASE", (email,)).fetchone()
+        if customer and check_password_hash(customer["password_hash"], password):
+            session.clear()
+            session["customer_id"] = customer["id"]
+            session["csrf_token"] = secrets.token_urlsafe(32)
+            return redirect(url_for("customer_account"))
+        flash("Email or password is incorrect.", "error")
+    return render_template_string(ACCOUNT_AUTH_TEMPLATE, page_title="Customer Login", action=url_for("customer_login"), show_name=False)
+
+@app.route("/logout", methods=["POST"])
+@customer_required
+def customer_logout():
+    check_csrf()
+    session.clear()
+    return redirect(url_for("home"))
+
+@app.route("/account")
+@customer_required
+def customer_account():
+    customer = current_customer()
+    with get_db() as conn:
+        earned = conn.execute("SELECT COALESCE(SUM(amount),0) FROM referral_rewards WHERE referrer_id=? AND status='Available'", (customer["id"],)).fetchone()[0]
+        pending = conn.execute("SELECT COALESCE(SUM(amount),0) FROM withdrawal_requests WHERE customer_id=? AND status IN ('Pending','Approved')", (customer["id"],)).fetchone()[0]
+        rewards = conn.execute("SELECT rr.amount,rr.status,rr.created_at,o.tracking_code FROM referral_rewards rr JOIN orders o ON o.id=rr.order_id WHERE rr.referrer_id=? ORDER BY rr.id DESC", (customer["id"],)).fetchall()
+        withdrawals = conn.execute("SELECT * FROM withdrawal_requests WHERE customer_id=? ORDER BY id DESC", (customer["id"],)).fetchall()
+        referrals = conn.execute("SELECT COUNT(*) FROM customers WHERE referred_by=?", (customer["id"],)).fetchone()[0]
+    balance = max(0, earned - pending)
+    referral_link = request.url_root.rstrip("/") + "/?ref=" + customer["referral_code"]
+    return render_template_string(ACCOUNT_PAGE_TEMPLATE, customer=customer,balance=balance,earned=earned,pending=pending,rewards=rewards,withdrawals=withdrawals,referrals=referrals,referral_link=referral_link)
+
+@app.route("/withdraw", methods=["POST"])
+@customer_required
+def request_withdrawal():
+    check_csrf()
+    phone=request.form.get("payout_phone","").strip()
+    try: amount=int(request.form.get("amount","0"))
+    except ValueError: amount=0
+    if not valid_uganda_phone(phone) or amount < 1000:
+        flash("Enter a valid Ugandan payout number and a withdrawal of at least UGX 1,000.","error")
+        return redirect(url_for("customer_account"))
+    customer=current_customer()
+    with get_db() as conn:
+        earned=conn.execute("SELECT COALESCE(SUM(amount),0) FROM referral_rewards WHERE referrer_id=? AND status='Available'",(customer["id"],)).fetchone()[0]
+        reserved=conn.execute("SELECT COALESCE(SUM(amount),0) FROM withdrawal_requests WHERE customer_id=? AND status IN ('Pending','Approved','Paid')",(customer["id"],)).fetchone()[0]
+        available=max(0,earned-reserved)
+        if amount > available:
+            flash("Your available referral balance is not enough for that withdrawal.","error")
+        else:
+            now=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            conn.execute("INSERT INTO withdrawal_requests (customer_id,amount,payout_phone,status,created_at,updated_at) VALUES (?,?,?,'Pending',?,?)",(customer["id"],amount,phone,now,now))
+            flash("Withdrawal request submitted. It will be reviewed by NEXORA; this is not an instant payment.","success")
+    return redirect(url_for("customer_account"))
+
+@app.route("/admin/referrals/withdrawals")
+@admin_required
+def admin_withdrawals():
+    with get_db() as conn:
+        rows=conn.execute("SELECT w.*,c.name,c.email FROM withdrawal_requests w JOIN customers c ON c.id=w.customer_id ORDER BY w.id DESC").fetchall()
+    return render_template_string(WITHDRAWAL_ADMIN_TEMPLATE, rows=rows)
+
+@app.route("/admin/referrals/withdrawals/<int:withdrawal_id>", methods=["POST"])
+@admin_required
+def admin_update_withdrawal(withdrawal_id):
+    check_csrf()
+    status=request.form.get("status","")
+    if status not in ("Approved","Paid","Rejected"):
+        abort(400)
+    with get_db() as conn:
+        row=conn.execute("SELECT * FROM withdrawal_requests WHERE id=?",(withdrawal_id,)).fetchone()
+        if row is None: abort(404)
+        if status == "Paid" and row["status"] not in ("Approved","Paid"):
+            flash("Approve a withdrawal before marking it paid.","error")
+            return redirect(url_for("admin_withdrawals"))
+        conn.execute("UPDATE withdrawal_requests SET status=?,updated_at=? WHERE id=?",(status,datetime.now().strftime("%Y-%m-%d %H:%M:%S"),withdrawal_id))
+    flash("Withdrawal status updated. Complete the actual payout separately before choosing Paid.","success")
+    return redirect(url_for("admin_withdrawals"))
+
+ACCOUNT_AUTH_TEMPLATE = """<!doctype html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'><title>{{ page_title }}</title><style>body{font-family:Arial;background:#f2f5fb;color:#10213c;padding:20px}.card{max-width:430px;margin:35px auto;background:white;padding:25px;border-radius:15px}input,button{box-sizing:border-box;width:100%;padding:13px;margin:8px 0;border:1px solid #ccd3e0;border-radius:8px}button{background:#2454dc;color:white;border:0;font-weight:bold}.msg{padding:10px;background:#fff0f0;margin:8px 0}</style></head><body><div class='card'><h2>NEXORA</h2><h3>{{ page_title }}</h3>{% for category,message in get_flashed_messages(with_categories=true) %}<p class='msg'>{{ message }}</p>{% endfor %}<form method='post'><input type='hidden' name='csrf_token' value='{{ csrf_token() }}'>{% if show_name %}<label>Full name</label><input name='name' maxlength='80' required>{% endif %}<label>Email</label><input type='email' name='email' required><label>Password (minimum 8 characters)</label><input type='password' name='password' minlength='8' required><button type='submit'>{{ 'CREATE ACCOUNT' if show_name else 'LOGIN' }}</button></form><p><a href='/login'>Login</a> · <a href='/register'>Register</a> · <a href='/'>Home</a></p></div></body></html>"""
+
+ACCOUNT_PAGE_TEMPLATE = """<!doctype html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'><title>NEXORA Account</title><style>body{font-family:Arial;background:#f2f5fb;color:#10213c;padding:18px}.card{max-width:720px;margin:20px auto;background:white;padding:22px;border-radius:14px}input,button{padding:12px;margin:6px 0;border:1px solid #ccd3e0;border-radius:7px}button{background:#2454dc;color:white;border:0}.link{overflow-wrap:anywhere;background:#edf2ff;padding:12px}</style></head><body><div class='card'><h2>NEXORA Account</h2><p>Welcome, {{ customer['name'] }} · {{ customer['email'] }}</p><h3>Referral wallet</h3><p><b>Available balance: UGX {{ '{:,}'.format(balance) }}</b></p><p>Total earned: UGX {{ '{:,}'.format(earned) }} · Referred accounts: {{ referrals }}</p><p>Earn UGX 1,000 when a person you refer registers and completes an order whose payment NEXORA verifies.</p><p>Your referral code: <b>{{ customer['referral_code'] }}</b></p><div class='link'>{{ referral_link }}</div><button onclick='navigator.clipboard.writeText({{ referral_link|tojson }})'>Copy referral link</button><h3>Request withdrawal</h3><form method='post' action='/withdraw'><input type='hidden' name='csrf_token' value='{{ csrf_token() }}'><input type='number' name='amount' min='1000' max='{{ balance }}' placeholder='Amount in UGX' required><input name='payout_phone' placeholder='07XXXXXXXX' pattern='07[0-9]{8}|2567[0-9]{8}' required><button>SUBMIT REQUEST</button></form><p>Withdrawal requests are reviewed manually. No automatic Mobile Money payout is connected.</p><h3>Reward history</h3>{% for r in rewards %}<p>UGX {{ '{:,}'.format(r['amount']) }} · {{ r['status'] }} · {{ r['tracking_code'] }}</p>{% else %}<p>No rewards yet.</p>{% endfor %}<h3>Withdrawal history</h3>{% for w in withdrawals %}<p>UGX {{ '{:,}'.format(w['amount']) }} · {{ w['status'] }} · {{ w['payout_phone'] }}</p>{% else %}<p>No withdrawals yet.</p>{% endfor %}<p><a href='/'>Home</a></p><form method='post' action='/logout'><input type='hidden' name='csrf_token' value='{{ csrf_token() }}'><button>LOG OUT</button></form></div></body></html>"""
+
+WITHDRAWAL_ADMIN_TEMPLATE = """<!doctype html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'><title>NEXORA withdrawals</title><style>body{font-family:Arial;background:#f2f5fb;padding:20px;color:#10213c}.card{background:white;padding:16px;margin:12px auto;max-width:800px;border-radius:10px}button,select{padding:10px;margin:5px}</style></head><body><h2>NEXORA Withdrawal Requests</h2><p><a href='/admin'>Back to dashboard</a></p>{% for r in rows %}<div class='card'><b>{{ r['name'] }}</b> ({{ r['email'] }})<p>UGX {{ '{:,}'.format(r['amount']) }} · {{ r['payout_phone'] }} · {{ r['status'] }}</p><form method='post' action='/admin/referrals/withdrawals/{{ r['id'] }}'><input type='hidden' name='csrf_token' value='{{ csrf_token() }}'><select name='status'><option>Approved</option><option>Paid</option><option>Rejected</option></select><button>Update</button></form></div>{% else %}<p>No withdrawal requests.</p>{% endfor %}</body></html>"""
 
 
 # ==================================================
@@ -450,15 +602,12 @@ def order():
         "package", ""
     ).strip()
 
-    available_packages = PACKAGES_BY_NETWORK.get(
-        network, {}
-    ).get(duration, [])
+    available_packages = PACKAGES_BY_DURATION.get(
+        duration, []
+    )
 
     selected = next(
-        (
-            p for p in available_packages
-            if p["gb"] == package and not p.get("disabled", False)
-        ),
+        (p for p in available_packages if p["gb"] == package),
         None
     )
 
@@ -472,9 +621,9 @@ def order():
 
         error = "Enter a valid data recipient phone number."
 
-    elif network not in DATA_NETWORKS or selected is None:
+    elif network not in NETWORKS or selected is None:
 
-        error = "Select a valid data network, duration and package."
+        error = "Select a valid network, duration and package."
 
     if error:
 
@@ -498,9 +647,10 @@ def order():
                 created_at,
                 payment_method,
                 tracking_code,
-                duration
+                duration,
+                customer_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             name,
             phone,
@@ -511,7 +661,8 @@ def order():
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Airtel Money Merchant",
             tracking_code,
-            duration
+            duration,
+            session.get("customer_id")
         ))
 
         order_id = cursor.lastrowid
@@ -764,99 +915,80 @@ def complete_paid_order():
     saved = session.get("csrf_token", "")
 
     if not saved or not hmac.compare_digest(submitted, saved):
-
         return jsonify({
             "success": False,
             "message": "Security token expired. Refresh the page and try again."
         }), 400
 
-    tracking_code = request.form.get(
-        "tracking_code", ""
-    ).strip().upper()
+    phone = request.form.get("phone", "").strip()
+    payment_reference = request.form.get("payment_reference", "").strip()[:100]
+    payment_sms = request.form.get("payment_sms", "").strip()[:2000]
 
-    phone = request.form.get(
-        "phone", ""
-    ).strip()
-
-    if not tracking_code or not valid_uganda_phone(phone):
-
+    if not valid_uganda_phone(phone):
         return jsonify({
             "success": False,
-            "message": "Enter your tracking reference and the phone number used when ordering."
+            "message": "Enter the phone number used when placing your order."
+        }), 400
+
+    if not payment_reference and not payment_sms:
+        return jsonify({
+            "success": False,
+            "message": "Enter a transaction/reference ID or paste your payment SMS."
         }), 400
 
     if not AIRTEL_MERCHANT_CODE:
-
         return jsonify({
             "success": False,
             "message": "Merchant payment is not configured. Please contact the administrator."
         }), 400
 
     with get_db() as conn:
-
+        # Match the customer's phone to their most recent order still awaiting payment.
         record = conn.execute("""
             SELECT id, status, payment_submitted_at
             FROM orders
-            WHERE tracking_code = ? AND phone = ?
-        """, (
-            tracking_code,
-            phone
-        )).fetchone()
+            WHERE phone = ?
+              AND status = 'Awaiting Payment'
+            ORDER BY id DESC
+            LIMIT 1
+        """, (phone,)).fetchone()
 
         if record is None:
-
             return jsonify({
                 "success": False,
-                "message": "Order not found. Check your tracking reference and phone number."
+                "message": "No unpaid order was found for that phone number. Check the number used when ordering or contact NEXORA support."
             }), 404
 
-        if record["status"] != "Awaiting Payment":
-
-            return jsonify({
-                "success": False,
-                "message": "This order has already been updated."
-            }), 400
-
         if record["payment_submitted_at"]:
-
-            session["customer_order_id"] = record["id"]
-
             return jsonify({
                 "success": True,
-                "message": "Your order has already been submitted for payment verification.",
-                "tracking_code": tracking_code,
-                "status": record["status"]
+                "message": "Your latest order has already been submitted for payment verification."
             })
 
         cursor = conn.execute("""
             UPDATE orders
-            SET payment_submitted_at = ?
+            SET payment_reference = ?,
+                payment_sms = ?,
+                payment_submitted_at = ?
             WHERE id = ?
               AND status = 'Awaiting Payment'
               AND payment_submitted_at IS NULL
         """, (
+            payment_reference or None,
+            payment_sms or None,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             record["id"]
         ))
 
         if cursor.rowcount != 1:
-
             return jsonify({
                 "success": False,
                 "message": "Could not submit your order. Please try again."
             }), 409
 
-        session["customer_order_id"] = record["id"]
-
     return jsonify({
-
         "success": True,
-
-        "message": "Your order has been submitted. NEXORA will verify payment after checking the merchant account.",
-
-        "tracking_code": tracking_code,
-
-        "status": "Awaiting Payment"
+        "message": "Your payment details have been submitted with your latest order for manual verification. This does not automatically confirm payment."
     })
 
 
@@ -933,129 +1065,62 @@ def track_order():
 
     if request.method == "POST":
 
-        submitted = request.form.get("csrf_token", "")
-        saved = session.get("csrf_token", "")
+        tracking_code = request.form.get(
+            "tracking_code", ""
+        ).strip().upper()
 
-        if not saved or not hmac.compare_digest(submitted, saved):
-            message = "Security token expired. Refresh the page and try again."
-            if is_ajax_request():
-                return jsonify({"success": False, "message": message}), 400
-            error = message
+        phone = request.form.get(
+            "phone", ""
+        ).strip()
+
+        prefill_tracking_code = tracking_code
+
+        if not tracking_code or not valid_uganda_phone(phone):
+
+            error = "Enter a valid tracking reference and phone number."
+
         else:
-            phone = request.form.get("phone", "").strip()
-            payment_reference = request.form.get("payment_reference", "").strip()
-            payment_sms = request.form.get("payment_sms", "").strip()
-            payment_phone = request.form.get("payment_phone", "").strip()
 
-            # The current index.html sends payment evidence to /track without
-            # a tracking code. Find the latest unpaid order for the recipient.
-            is_payment_submission = bool(
-                payment_reference or payment_sms or payment_phone
-            )
+            with get_db() as conn:
 
-            if is_payment_submission:
+                order = conn.execute("""
+                    SELECT tracking_code, network, duration, package,
+                           amount, status, created_at, payment_submitted_at
+                    FROM orders
+                    WHERE tracking_code = ? AND phone = ?
+                """, (
+                    tracking_code,
+                    phone
+                )).fetchone()
 
-                if not valid_uganda_phone(phone):
-                    error = "Enter a valid phone number receiving data."
-                elif not valid_uganda_phone(payment_phone):
-                    error = "Enter a valid phone number used to make payment."
-                elif not payment_reference and not payment_sms:
-                    error = "Enter a transaction ID or paste your payment SMS."
-                else:
-                    with get_db() as conn:
-                        record = conn.execute("""
-                            SELECT * FROM orders
-                            WHERE phone = ?
-                              AND status = 'Awaiting Payment'
-                            ORDER BY id DESC
-                            LIMIT 1
-                        """, (phone,)).fetchone()
+            if order is None:
 
-                        if record is None:
-                            error = "No unpaid order was found for that phone number. Check the number or use Track Order."
-                        else:
-                            if not record["payment_submitted_at"]:
-                                conn.execute("""
-                                    UPDATE orders
-                                    SET payment_submitted_at = ?,
-                                        payment_reference = ?,
-                                        payment_sms = ?,
-                                        payment_phone = ?
-                                    WHERE id = ?
-                                      AND status = 'Awaiting Payment'
-                                      AND payment_submitted_at IS NULL
-                                """, (
-                                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                    payment_reference or None,
-                                    payment_sms or None,
-                                    payment_phone,
-                                    record["id"]
-                                ))
+                error = "Order not found. Check your tracking reference and phone number."
 
-                            updated_order = conn.execute("""
-                                SELECT tracking_code, network, duration, package,
-                                       amount, status, created_at, payment_submitted_at
-                                FROM orders WHERE id = ?
-                            """, (record["id"],)).fetchone()
+        if is_ajax_request():
 
-                    if error is None:
-                        session["customer_order_id"] = record["id"]
-                        return jsonify({
-                            "success": True,
-                            "message": "Payment details received. NEXORA will review and verify your payment against its merchant records.",
-                            "order": {
-                                "tracking_code": updated_order["tracking_code"],
-                                "network": updated_order["network"],
-                                "duration": updated_order["duration"],
-                                "package": updated_order["package"],
-                                "amount": updated_order["amount"],
-                                "status": updated_order["status"],
-                                "created_at": updated_order["created_at"],
-                                "payment_submitted_at": updated_order["payment_submitted_at"]
-                            }
-                        })
+            if error:
 
-            else:
-                tracking_code = request.form.get(
-                    "tracking_code", ""
-                ).strip().upper()
+                return jsonify({
+                    "success": False,
+                    "message": error
+                }), 400
 
-                prefill_tracking_code = tracking_code
+            return jsonify({
 
-                if not tracking_code or not valid_uganda_phone(phone):
-                    error = "Enter a valid tracking reference and phone number."
-                else:
-                    with get_db() as conn:
-                        order = conn.execute("""
-                            SELECT tracking_code, network, duration, package,
-                                   amount, status, created_at, payment_submitted_at
-                            FROM orders
-                            WHERE tracking_code = ? AND phone = ?
-                        """, (tracking_code, phone)).fetchone()
+                "success": True,
 
-                    if order is None:
-                        error = "Order not found. Check your tracking reference and phone number."
-
-                if is_ajax_request():
-                    if error:
-                        return jsonify({"success": False, "message": error}), 400
-
-                    return jsonify({
-                        "success": True,
-                        "order": {
-                            "tracking_code": order["tracking_code"],
-                            "network": order["network"],
-                            "duration": order["duration"],
-                            "package": order["package"],
-                            "amount": order["amount"],
-                            "status": order["status"],
-                            "created_at": order["created_at"],
-                            "payment_submitted_at": order["payment_submitted_at"]
-                        }
-                    })
-
-            if is_ajax_request() and error:
-                return jsonify({"success": False, "message": error}), 400
+                "order": {
+                    "tracking_code": order["tracking_code"],
+                    "network": order["network"],
+                    "duration": order["duration"],
+                    "package": order["package"],
+                    "amount": order["amount"],
+                    "status": order["status"],
+                    "created_at": order["created_at"],
+                    "payment_submitted_at": order["payment_submitted_at"]
+                }
+            })
 
     return render_template_string("""
 
@@ -1351,20 +1416,15 @@ def admin_login():
         username = request.form.get("username", "")
         password = request.form.get("password", "")
 
-        # Never accept a built-in/default admin password. If credentials
-        # are absent, keep the customer site online and deny admin login.
-        username_ok = False
-        password_ok = False
+        username_ok = hmac.compare_digest(
+            username,
+            ADMIN_USERNAME
+        )
 
-        if ADMIN_CONFIGURED:
-            username_ok = hmac.compare_digest(
-                username,
-                ADMIN_USERNAME
-            )
-            password_ok = hmac.compare_digest(
-                password,
-                ADMIN_PASSWORD
-            )
+        password_ok = hmac.compare_digest(
+            password,
+            ADMIN_PASSWORD
+        )
 
         if username_ok and password_ok:
 
@@ -1376,16 +1436,10 @@ def admin_login():
 
             return redirect(url_for("admin_dashboard"))
 
-        if not ADMIN_CONFIGURED:
-            flash(
-                "Admin login is not configured. Set MKS_ADMIN_USERNAME and MKS_ADMIN_PASSWORD in the hosting environment.",
-                "error"
-            )
-        else:
-            flash(
-                "Incorrect username or password.",
-                "error"
-            )
+        flash(
+            "Incorrect username or password.",
+            "error"
+        )
 
     return render_template("admin_login.html")
 
@@ -1491,6 +1545,10 @@ def update_order(order_id):
         if current is None:
             abort(404)
 
+        if new_status == "Completed" and not current["payment_verified_at"]:
+            flash("Verify the customer's payment before completing this order.", "error")
+            return redirect(url_for("admin_dashboard"))
+
         if new_status == "Payment Verified":
 
             if not current["payment_submitted_at"]:
@@ -1522,6 +1580,19 @@ def update_order(order_id):
                 new_status,
                 order_id
             ))
+
+        if new_status == "Completed":
+            linked = conn.execute("""
+                SELECT c.id, c.referred_by
+                FROM orders o JOIN customers c ON c.id = o.customer_id
+                WHERE o.id = ?
+            """, (order_id,)).fetchone()
+            if linked and linked["referred_by"]:
+                conn.execute("""
+                    INSERT OR IGNORE INTO referral_rewards
+                    (referrer_id,referred_customer_id,order_id,amount,status,created_at)
+                    VALUES (?,?,?,?,'Available',?)
+                """, (linked["referred_by"],linked["id"],order_id,REFERRAL_REWARD_AMOUNT,datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
     flash(
         "Order status updated successfully.",
