@@ -70,6 +70,12 @@ button,a{-webkit-tap-highlight-color:transparent}
 .network-card strong{display:block;font-size:12px}.network-card small{color:var(--muted);font-size:10px}
 .selection-panel{display:none;margin-top:16px}.selection-panel.show{display:block;animation:drop .3s ease}
 @keyframes drop{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+/* Bundle area stays hidden until the visitor requests Buy Data. */
+#bundles{display:none;scroll-margin-top:14px}
+#bundles.open{display:block;animation:bundleEnter .42s ease both}
+@keyframes bundleEnter{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.service,.network-card,.duration-card,.package-card,.bottom-nav a{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease,background .22s ease}
+.network-card:active,.duration-card:active,.package-card:active{transform:scale(.97)}
 .package-heading{background:linear-gradient(135deg,#091936,#2454dc);color:#fff;padding:14px;border-radius:13px;margin-bottom:10px}
 .package-heading h2{margin:0 0 4px;font-size:17px}.package-heading p{margin:0;color:#dce5ff;font-size:11px}
 .duration-grid,.package-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
@@ -235,6 +241,57 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
 </footer>
 </div>
 
+<!-- BUY DATA NETWORK PICKER -->
+<div class="sheet-overlay" id="networkPickerOverlay">
+<div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+        <h2>Choose your network</h2>
+        <button type="button" class="close-button" id="closeNetworkPicker" aria-label="Close">×</button>
+    </div>
+    <p style="color:#778198;font-size:13px;margin:9px 0 16px">Select your mobile network to continue.</p>
+    <div class="network-grid">
+        <button type="button" class="network-card network-prompt-card" data-network="MTN">
+            <div class="network-logo logo-mtn">MTN</div><strong>MTN</strong><small>Uganda</small>
+        </button>
+        <button type="button" class="network-card network-prompt-card" data-network="Airtel">
+            <div class="network-logo logo-airtel">A</div><strong>Airtel</strong><small>Uganda</small>
+        </button>
+        <button type="button" class="network-card network-prompt-card" data-network="Lyca">
+            <div class="network-logo logo-lyca">LY</div><strong>Lyca</strong><small>Uganda</small>
+        </button>
+    </div>
+</div>
+</div>
+
+<!-- DATA DURATION PICKER -->
+<div class="sheet-overlay" id="durationPickerOverlay">
+<div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+        <h2>Choose duration</h2>
+        <button type="button" class="close-button" id="closeDurationPicker" aria-label="Close">×</button>
+    </div>
+    <p style="color:#778198;font-size:13px;margin:9px 0 16px">Choose how long you want your data bundle to last.</p>
+    <div id="durationSheetContent"></div>
+    <button type="button" class="action-button secondary" id="backToNetwork">← Back to network</button>
+</div>
+</div>
+
+<!-- DATA PACKAGE PICKER -->
+<div class="sheet-overlay" id="packagePickerOverlay">
+<div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+        <h2>Choose a data package</h2>
+        <button type="button" class="close-button" id="closePackagePicker" aria-label="Close">×</button>
+    </div>
+    <p style="color:#778198;font-size:13px;margin:9px 0 16px">Select your preferred data bundle.</p>
+    <div id="packageSheetContent"></div>
+    <button type="button" class="action-button secondary" id="backToDuration">← Back to duration</button>
+</div>
+</div>
+
 <!-- AIRTIME TO CASH REQUEST -->
 <div class="sheet-overlay" id="airtimeOverlay">
 <div class="sheet">
@@ -395,7 +452,7 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
     </div>
 
     <p style="color:#778198;font-size:13px;line-height:1.6">
-        Confirm the phone number receiving data for the order you just placed. Your order is identified securely from the payment screen.
+        Already paid? Enter your order details and payment evidence here. NEXORA will check the information against its merchant records.
     </p>
 
     <form id="alreadyPaidForm">
@@ -406,7 +463,7 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
         <input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
 
         <div class="notice">
-            Your order will be submitted for manual payment verification. Submitting this form does not automatically confirm payment. Never enter your PIN or OTP here.
+            Submit your order for manual payment verification. You do not need to enter a tracking code, transaction ID or payment SMS here. NEXORA will check the merchant account before confirming payment. Never enter your Mobile Money PIN or OTP.
         </div>
 
         <div id="alreadyPaidMessage"></div>
@@ -431,6 +488,7 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
         <input type="text" name="tracking_code" id="trackingCodeInput" placeholder="Enter tracking code" required>
         <label>Phone Number Receiving Data</label>
         <input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
+
         <div id="trackingError"></div>
         <button type="submit" class="submit-button" id="trackSubmitButton">TRACK MY ORDER →</button>
     </form>
@@ -494,6 +552,30 @@ const packages = {
 
 const $ = id => document.getElementById(id);
 
+/* ALL BUY-DATA STEPS USE BOTTOM-SHEET PICKERS */
+function openBundles(event) {
+    if (event) event.preventDefault();
+    closeScreens();
+    activeNav("bundlesButton");
+    showScreen($("networkPickerOverlay"));
+}
+
+document.querySelectorAll('.service[href="#bundles"], .hero-button').forEach(link => {
+    link.addEventListener("click", openBundles);
+});
+
+// Move the existing duration and package interfaces into their own sheets.
+$("durationSection").classList.add("show");
+$("packageSection").classList.add("show");
+$("durationSheetContent").appendChild($("durationSection"));
+$("packageSheetContent").appendChild($("packageSection"));
+
+$("closeNetworkPicker").addEventListener("click", closeScreens);
+$("closeDurationPicker").addEventListener("click", closeScreens);
+$("closePackagePicker").addEventListener("click", closeScreens);
+$("backToNetwork").addEventListener("click", () => showScreen($("networkPickerOverlay")));
+$("backToDuration").addEventListener("click", () => showScreen($("durationPickerOverlay")));
+
 let selectedNetwork = "";
 let selectedDuration = "";
 let selectedPackage = "";
@@ -504,6 +586,9 @@ let trackingTimer = null;
 let activeTracking = null;
 
 const overlays = [
+    $("networkPickerOverlay"),
+    $("durationPickerOverlay"),
+    $("packagePickerOverlay"),
     $("orderOverlay"),
     $("confirmationOverlay"),
     $("paymentOverlay"),
@@ -582,10 +667,10 @@ document.querySelectorAll(".network-card").forEach(card => {
         document.querySelectorAll(".duration-card").forEach(x => x.classList.remove("selected"));
         $("packageSection").classList.remove("show");
         $("packageGrid").innerHTML = "";
-
         $("durationNetworkLabel").textContent = selectedNetwork + " Uganda — Choose your duration.";
         $("durationSection").classList.add("show");
-        $("durationSection").scrollIntoView({behavior:"smooth",block:"start"});
+
+        showScreen($("durationPickerOverlay"));
     });
 });
 
@@ -604,7 +689,7 @@ document.querySelectorAll(".duration-card").forEach(card => {
         $("selectedNetworkLabel").textContent = selectedNetwork + " · " + selectedDuration + " packages";
         displayPackages();
         $("packageSection").classList.add("show");
-        $("packageSection").scrollIntoView({behavior:"smooth",block:"start"});
+        showScreen($("packagePickerOverlay"));
     });
 });
 
@@ -719,21 +804,19 @@ $("copyMerchantCode").addEventListener("click", async () => {
 
 /* COMPLETE FROM PAYMENT SCREEN */
 $("paymentCompleteButton").addEventListener("click", () => {
-    if (!currentOrder || !currentOrder.id) return;
+    if (!currentOrder || !currentOrder.id) {
+        alert("Your order details are not available. Please place your order again.");
+        return;
+    }
 
     $("alreadyPaidForm").reset();
     $("alreadyPaidMessage").innerHTML = "";
-
-    $("alreadyPaidForm").elements.namedItem("order_id").value =
-        currentOrder.id;
-
-    $("alreadyPaidForm").elements.namedItem("phone").value =
-        currentOrder.phone || "";
-
+    $("alreadyPaidForm").elements.namedItem("order_id").value = currentOrder.id;
+    $("alreadyPaidForm").elements.namedItem("phone").value = currentOrder.phone || "";
     showScreen($("alreadyPaidOverlay"));
 });
 
-/* ALREADY PAID SERVICE: REQUIRE AN ORDER FIRST */
+/* ALREADY PAID SERVICE */
 $("servicePaidButton").addEventListener("click", event => {
     event.preventDefault();
     alert("Please place your order first, continue to the payment screen, and select Complete My Order.");
@@ -751,18 +834,9 @@ $("alreadyPaidForm").addEventListener("submit", async event => {
 
     try {
         const formData = new FormData($("alreadyPaidForm"));
+        const data = await postForm("/api/complete-paid-order", formData);
 
-        const data = await postForm(
-            "/api/complete-paid-order",
-            formData
-        );
-
-        showMessage(
-            $("alreadyPaidMessage"),
-            data.message,
-            "success"
-        );
-
+        showMessage($("alreadyPaidMessage"), data.message, "success");
         button.textContent = "SUBMITTED ✓";
 
     } catch (error) {
@@ -812,7 +886,10 @@ function openGeneralTracking(event) {
 }
 
 $("trackButton").addEventListener("click", openGeneralTracking);
-$("serviceTrackButton").addEventListener("click", openGeneralTracking);
+const serviceTrackButton = $("serviceTrackButton");
+if (serviceTrackButton) {
+    serviceTrackButton.addEventListener("click", openGeneralTracking);
+}
 
 /* GENERAL TRACKING FORM */
 $("trackingForm").addEventListener("submit", async event => {
@@ -893,7 +970,11 @@ function renderTrackingOrder(order) {
         Duration: ${escapeHTML(order.duration)}<br>
         Package: ${escapeHTML(order.package)}<br>
         Amount: ${money(order.amount)}<br>
-        Order date: ${escapeHTML(order.created_at || "")}
+        Order date: ${escapeHTML(order.created_at || "")}<br>
+        Payment evidence: ${order.payment_evidence_submitted ? "Submitted for review" : "Not submitted"}<br>
+        ${order.payment_reference ? "Transaction ID: " + escapeHTML(order.payment_reference) + "<br>" : ""}
+        ${order.payment_phone ? "Paid from: " + escapeHTML(order.payment_phone) + "<br>" : ""}
+        ${order.payment_analysis && order.payment_analysis.length ? "<strong>Payment detail checks</strong><br>" + order.payment_analysis.map(item => "• " + escapeHTML(item)).join("<br>") : ""}
     `;
 
     displayGeneralProgress(
@@ -1027,6 +1108,7 @@ function resetHome(event) {
     $("generalTrackingResult").innerHTML = "";
     $("alreadyPaidMessage").innerHTML = "";
 
+    $("bundles").classList.remove("open");
     activeNav("homeButton");
     window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1034,10 +1116,7 @@ function resetHome(event) {
 $("homeButton").addEventListener("click", resetHome);
 $("trackingHomeButton").addEventListener("click", resetHome);
 
-$("bundlesButton").addEventListener("click", () => {
-    closeScreens();
-    activeNav("bundlesButton");
-});
+$("bundlesButton").addEventListener("click", openBundles);
 
 /* CLOSE BUTTONS */
 [
