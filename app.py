@@ -51,62 +51,36 @@ DB_NAME = os.path.join(
 
 
 # ==================================================
-# PACKAGES
+# PACKAGES — MATCHES THE CURRENT index.html
 # ==================================================
 
-# All supported networks. Lyca remains available for Airtime-to-Cash.
 NETWORKS = ["MTN", "Airtel", "Lyca"]
+DATA_NETWORKS = ["MTN", "Airtel", "Lyca"]
 
-# Only MTN and Airtel sell data bundles on NEXORA.
-DATA_NETWORKS = ["MTN", "Airtel"]
-
-# Prices are validated on the server; never trust a price sent by the browser.
-PACKAGES_BY_NETWORK = {
-    "MTN": {
-        "Daily": [
-            {"gb": "6 GB", "price": 3000}
-        ],
-        "Weekly": [
-            {"gb": "7 GB", "price": 4000},
-            {"gb": "10 GB", "price": 7000},
-            {"gb": "12.5 GB", "price": 9000},
-            {"gb": "15 GB", "price": 11000}
-        ],
-        "Monthly": [
-            {"gb": "10 GB", "price": 6000},
-            {"gb": "12.5 GB", "price": 8000},
-            {"gb": "15 GB", "price": 11000},
-            {"gb": "20 GB", "price": 15000}
-        ]
-    },
-    "Airtel": {
-        "Daily": [
-            {"gb": "6 GB", "price": 3000}
-        ],
-        "Weekly": [
-            {"gb": "7 GB", "price": 4000},
-            {"gb": "9.5 GB", "price": 6500},
-            {"gb": "12 GB", "price": 8000},
-            {"gb": "14 GB", "price": 10000}
-        ],
-        "Monthly": [
-            {"gb": "10 GB", "price": 7000},
-            {"gb": "15 GB", "price": 10000},
-            {"gb": "20 GB", "price": 15000},
-            {"gb": "25 GB", "price": 20000},
-            {"gb": "30 GB", "price": 25000}
-        ]
-    }
+# The browser displays the same weekly/monthly catalogue for each network.
+# Prices are selected on the server, never trusted from browser-submitted values.
+PACKAGES_BY_DURATION = {
+    "Weekly": [
+        {"gb": "12 GB", "price": 9000},
+        {"gb": "15 GB", "price": 11000},
+        {"gb": "17.5 GB", "price": 13000},
+        {"gb": "19 GB", "price": 15000}
+    ],
+    "Monthly": [
+        {"gb": "10 GB", "price": 7000, "disabled": True},
+        {"gb": "15 GB", "price": 10000},
+        {"gb": "20 GB", "price": 15000},
+        {"gb": "25 GB", "price": 20000},
+        {"gb": "30 GB", "price": 25000}
+    ]
 }
 
-# Keep these combined views for compatibility with existing templates/admin code.
-PACKAGES_BY_DURATION = {
-    duration: [
-        package
-        for network in DATA_NETWORKS
-        for package in PACKAGES_BY_NETWORK[network][duration]
-    ]
-    for duration in ["Daily", "Weekly", "Monthly"]
+PACKAGES_BY_NETWORK = {
+    network: {
+        duration: [dict(package) for package in package_list]
+        for duration, package_list in PACKAGES_BY_DURATION.items()
+    }
+    for network in DATA_NETWORKS
 }
 
 PACKAGES = PACKAGES_BY_DURATION["Monthly"]
@@ -214,6 +188,16 @@ def init_db():
             "payment_submitted_at": """
                 ALTER TABLE orders
                 ADD COLUMN payment_submitted_at TEXT
+            """,
+
+            "payment_sms": """
+                ALTER TABLE orders
+                ADD COLUMN payment_sms TEXT
+            """,
+
+            "payment_phone": """
+                ALTER TABLE orders
+                ADD COLUMN payment_phone TEXT
             """
         }
 
@@ -345,6 +329,38 @@ def home():
 
 
 # ==================================================
+# CUSTOMER ACCOUNT
+# ==================================================
+
+@app.route("/account")
+def customer_account():
+
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>My Account | NEXORA</title>
+        <style>
+            body { font-family: Arial, sans-serif; background: #f1f3f7; color: #091936; padding: 20px; }
+            .card { max-width: 450px; margin: 50px auto; padding: 25px; background: white; border-radius: 15px; }
+            a { display: block; padding: 14px; background: #2454dc; color: white; text-decoration: none; text-align: center; border-radius: 9px; }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h2>NEXORA — My Account</h2>
+            <p>Customer account and referral services are not currently available.</p>
+            <p>You can still order data bundles and track your orders.</p>
+            <a href="/">RETURN TO NEXORA</a>
+        </div>
+    </body>
+    </html>
+    """)
+
+
+# ==================================================
 # AIRTIME-TO-CASH CUSTOMER REQUESTS
 # ==================================================
 
@@ -439,7 +455,10 @@ def order():
     ).get(duration, [])
 
     selected = next(
-        (p for p in available_packages if p["gb"] == package),
+        (
+            p for p in available_packages
+            if p["gb"] == package and not p.get("disabled", False)
+        ),
         None
     )
 
@@ -914,62 +933,129 @@ def track_order():
 
     if request.method == "POST":
 
-        tracking_code = request.form.get(
-            "tracking_code", ""
-        ).strip().upper()
+        submitted = request.form.get("csrf_token", "")
+        saved = session.get("csrf_token", "")
 
-        phone = request.form.get(
-            "phone", ""
-        ).strip()
-
-        prefill_tracking_code = tracking_code
-
-        if not tracking_code or not valid_uganda_phone(phone):
-
-            error = "Enter a valid tracking reference and phone number."
-
+        if not saved or not hmac.compare_digest(submitted, saved):
+            message = "Security token expired. Refresh the page and try again."
+            if is_ajax_request():
+                return jsonify({"success": False, "message": message}), 400
+            error = message
         else:
+            phone = request.form.get("phone", "").strip()
+            payment_reference = request.form.get("payment_reference", "").strip()
+            payment_sms = request.form.get("payment_sms", "").strip()
+            payment_phone = request.form.get("payment_phone", "").strip()
 
-            with get_db() as conn:
+            # The current index.html sends payment evidence to /track without
+            # a tracking code. Find the latest unpaid order for the recipient.
+            is_payment_submission = bool(
+                payment_reference or payment_sms or payment_phone
+            )
 
-                order = conn.execute("""
-                    SELECT tracking_code, network, duration, package,
-                           amount, status, created_at, payment_submitted_at
-                    FROM orders
-                    WHERE tracking_code = ? AND phone = ?
-                """, (
-                    tracking_code,
-                    phone
-                )).fetchone()
+            if is_payment_submission:
 
-            if order is None:
+                if not valid_uganda_phone(phone):
+                    error = "Enter a valid phone number receiving data."
+                elif not valid_uganda_phone(payment_phone):
+                    error = "Enter a valid phone number used to make payment."
+                elif not payment_reference and not payment_sms:
+                    error = "Enter a transaction ID or paste your payment SMS."
+                else:
+                    with get_db() as conn:
+                        record = conn.execute("""
+                            SELECT * FROM orders
+                            WHERE phone = ?
+                              AND status = 'Awaiting Payment'
+                            ORDER BY id DESC
+                            LIMIT 1
+                        """, (phone,)).fetchone()
 
-                error = "Order not found. Check your tracking reference and phone number."
+                        if record is None:
+                            error = "No unpaid order was found for that phone number. Check the number or use Track Order."
+                        else:
+                            if not record["payment_submitted_at"]:
+                                conn.execute("""
+                                    UPDATE orders
+                                    SET payment_submitted_at = ?,
+                                        payment_reference = ?,
+                                        payment_sms = ?,
+                                        payment_phone = ?
+                                    WHERE id = ?
+                                      AND status = 'Awaiting Payment'
+                                      AND payment_submitted_at IS NULL
+                                """, (
+                                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    payment_reference or None,
+                                    payment_sms or None,
+                                    payment_phone,
+                                    record["id"]
+                                ))
 
-        if is_ajax_request():
+                            updated_order = conn.execute("""
+                                SELECT tracking_code, network, duration, package,
+                                       amount, status, created_at, payment_submitted_at
+                                FROM orders WHERE id = ?
+                            """, (record["id"],)).fetchone()
 
-            if error:
+                    if error is None:
+                        session["customer_order_id"] = record["id"]
+                        return jsonify({
+                            "success": True,
+                            "message": "Payment details received. NEXORA will review and verify your payment against its merchant records.",
+                            "order": {
+                                "tracking_code": updated_order["tracking_code"],
+                                "network": updated_order["network"],
+                                "duration": updated_order["duration"],
+                                "package": updated_order["package"],
+                                "amount": updated_order["amount"],
+                                "status": updated_order["status"],
+                                "created_at": updated_order["created_at"],
+                                "payment_submitted_at": updated_order["payment_submitted_at"]
+                            }
+                        })
 
-                return jsonify({
-                    "success": False,
-                    "message": error
-                }), 400
+            else:
+                tracking_code = request.form.get(
+                    "tracking_code", ""
+                ).strip().upper()
 
-            return jsonify({
+                prefill_tracking_code = tracking_code
 
-                "success": True,
+                if not tracking_code or not valid_uganda_phone(phone):
+                    error = "Enter a valid tracking reference and phone number."
+                else:
+                    with get_db() as conn:
+                        order = conn.execute("""
+                            SELECT tracking_code, network, duration, package,
+                                   amount, status, created_at, payment_submitted_at
+                            FROM orders
+                            WHERE tracking_code = ? AND phone = ?
+                        """, (tracking_code, phone)).fetchone()
 
-                "order": {
-                    "tracking_code": order["tracking_code"],
-                    "network": order["network"],
-                    "duration": order["duration"],
-                    "package": order["package"],
-                    "amount": order["amount"],
-                    "status": order["status"],
-                    "created_at": order["created_at"],
-                    "payment_submitted_at": order["payment_submitted_at"]
-                }
-            })
+                    if order is None:
+                        error = "Order not found. Check your tracking reference and phone number."
+
+                if is_ajax_request():
+                    if error:
+                        return jsonify({"success": False, "message": error}), 400
+
+                    return jsonify({
+                        "success": True,
+                        "order": {
+                            "tracking_code": order["tracking_code"],
+                            "network": order["network"],
+                            "duration": order["duration"],
+                            "package": order["package"],
+                            "amount": order["amount"],
+                            "status": order["status"],
+                            "created_at": order["created_at"],
+                            "payment_submitted_at": order["payment_submitted_at"]
+                        }
+                    })
+
+            if is_ajax_request() and error:
+                return jsonify({"success": False, "message": error}), 400
 
     return render_template_string("""
 
