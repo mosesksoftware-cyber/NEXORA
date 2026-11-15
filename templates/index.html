@@ -457,13 +457,18 @@ footer p{color:#c8d3e9;font-size:11px;line-height:1.5}
 
     <form id="alreadyPaidForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="order_id">
 
         <label>Phone Number Receiving Data</label>
         <input type="tel" name="phone" placeholder="07XXXXXXXX" pattern="07[0-9]{8}|2567[0-9]{8}" required>
 
+        <label>Payment Transaction / Reference ID (optional)</label>
+        <input type="text" name="payment_reference" maxlength="100" placeholder="Enter transaction or reference ID">
+
+        <label>Paste Payment SMS (optional)</label>
+        <textarea name="payment_sms" rows="4" maxlength="2000" placeholder="Paste the Airtel Money payment confirmation SMS here"></textarea>
+
         <div class="notice">
-            Submit your order for manual payment verification. You do not need to enter a tracking code, transaction ID or payment SMS here. NEXORA will check the merchant account before confirming payment. Never enter your Mobile Money PIN or OTP.
+            Enter either the transaction/reference ID or paste the payment SMS. NEXORA will use your phone number and payment details to find your latest unpaid order and submit it for manual verification. Do not include your Mobile Money PIN or OTP.
         </div>
 
         <div id="alreadyPaidMessage"></div>
@@ -804,22 +809,23 @@ $("copyMerchantCode").addEventListener("click", async () => {
 
 /* COMPLETE FROM PAYMENT SCREEN */
 $("paymentCompleteButton").addEventListener("click", () => {
-    if (!currentOrder || !currentOrder.id) {
-        alert("Your order details are not available. Please place your order again.");
-        return;
-    }
-
     $("alreadyPaidForm").reset();
     $("alreadyPaidMessage").innerHTML = "";
-    $("alreadyPaidForm").elements.namedItem("order_id").value = currentOrder.id;
-    $("alreadyPaidForm").elements.namedItem("phone").value = currentOrder.phone || "";
+    if (currentOrder && currentOrder.phone) {
+        $("alreadyPaidForm").elements.namedItem("phone").value = currentOrder.phone;
+    }
     showScreen($("alreadyPaidOverlay"));
 });
 
-/* ALREADY PAID SERVICE */
+/* ALREADY PAID SERVICE — AVAILABLE DIRECTLY FROM HOME */
 $("servicePaidButton").addEventListener("click", event => {
     event.preventDefault();
-    alert("Please place your order first, continue to the payment screen, and select Complete My Order.");
+    $("alreadyPaidForm").reset();
+    $("alreadyPaidMessage").innerHTML = "";
+    if (currentOrder && currentOrder.phone) {
+        $("alreadyPaidForm").elements.namedItem("phone").value = currentOrder.phone;
+    }
+    showScreen($("alreadyPaidOverlay"));
 });
 
 /* COMPLETE MY ORDER */
@@ -827,6 +833,13 @@ $("alreadyPaidForm").addEventListener("submit", async event => {
     event.preventDefault();
 
     if (!$("alreadyPaidForm").reportValidity()) return;
+
+    const reference = $("alreadyPaidForm").elements.namedItem("payment_reference").value.trim();
+    const sms = $("alreadyPaidForm").elements.namedItem("payment_sms").value.trim();
+    if (!reference && !sms) {
+        showMessage($("alreadyPaidMessage"), "Enter a transaction/reference ID or paste your payment SMS.");
+        return;
+    }
 
     const button = $("alreadyPaidSubmit");
     button.disabled = true;
